@@ -1,8 +1,7 @@
-'use strict'
-
-// import { app, BrowserWindow } from 'electron'
+import { app, globalShortcut } from 'electron'
 import { menubar } from 'menubar'
 import '../renderer/store'
+import Preferences from './preferences'
 
 /**
  * Set `__static` path to static files in production
@@ -16,6 +15,8 @@ if (process.env.NODE_ENV !== 'development') {
 const winURL = process.env.NODE_ENV === 'development'
   ? `http://localhost:9080`
   : `file://${__dirname}/index.html`
+
+const preferences = new Preferences()
 
 const mb = menubar({
   index: winURL
@@ -42,13 +43,18 @@ mb.on('ready', () => {
 //   })
 // }
 
-// app.on('ready', createWindow)
+app.on('ready', async () => {
+  const hotKey = await preferences.getHotKey()
+  globalShortcut.register(hotKey, () => {
+    // TODO: Implement audio recording and relevant UI.
+  })
+})
 
-// app.on('window-all-closed', () => {
-//   if (process.platform !== 'darwin') {
-//     app.quit()
-//   }
-// })
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') {
+    app.quit()
+  }
+})
 
 // app.on('activate', () => {
 //   if (mainWindow === null) {
