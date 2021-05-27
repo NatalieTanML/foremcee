@@ -46,7 +46,7 @@ mb.on('ready', () => {
 app.on('ready', async () => {
   const hotKey = await preferences.getHotKey()
   globalShortcut.register(hotKey, () => {
-
+    // TODO: Implement audio recording and relevant UI.
   })
 })
 
