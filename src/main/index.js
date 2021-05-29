@@ -1,4 +1,4 @@
-import { app, globalShortcut } from 'electron'
+import { app, globalShortcut, BrowserWindow, Notification } from 'electron'
 import { menubar } from 'menubar'
 import '../renderer/store'
 import Preferences from './preferences'
@@ -11,11 +11,11 @@ if (process.env.NODE_ENV !== 'development') {
   global.__static = require('path').join(__dirname, '/static').replace(/\\/g, '\\\\')
 }
 
-// let mainWindow
+let mainWindow = null
 const winURL = process.env.NODE_ENV === 'development'
   ? `http://localhost:9080`
   : `file://${__dirname}/index.html`
-
+const recordingURL = `${winURL}/#/recorder`
 const preferences = new Preferences()
 
 const mb = menubar({
@@ -26,27 +26,16 @@ mb.on('ready', () => {
   console.log('Menubar app is ready.')
 })
 
-// function createWindow () {
-//   /**
-//    * Initial window options
-//    */
-//   mainWindow = new BrowserWindow({
-//     height: 563,
-//     useContentSize: true,
-//     width: 1000
-//   })
-
-//   mainWindow.loadURL(winURL)
-
-//   mainWindow.on('closed', () => {
-//     mainWindow = null
-//   })
-// }
-
 app.on('ready', async () => {
   const hotKey = await preferences.getHotKey()
   globalShortcut.register(hotKey, () => {
-    // TODO: Implement audio recording and relevant UI.
+    if (mainWindow === null) {
+      createInvisibleWindow(recordingURL)
+      showNotification('Recording Started', 'Transcibing your voice...')
+    } else {
+      mainWindow.close()
+      showNotification('Recording Completed', 'Your recording and transcript can be accessed from the menu bar application')
+    }
   })
 })
 
@@ -55,6 +44,28 @@ app.on('window-all-closed', () => {
     app.quit()
   }
 })
+
+function createInvisibleWindow (url) {
+  mainWindow = new BrowserWindow({
+    height: 400,
+    width: 400,
+    show: false,
+    webPreferences: {
+      devTools: false,
+      backgroundThrottling: false
+    }
+  })
+
+  mainWindow.loadURL(url)
+
+  mainWindow.on('closed', () => {
+    mainWindow = null
+  })
+}
+
+function showNotification (title, body) {
+  new Notification({ title, body }).show()
+}
 
 // app.on('activate', () => {
 //   if (mainWindow === null) {
