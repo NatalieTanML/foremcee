@@ -11,10 +11,17 @@
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
 import path from 'path';
-import { app, BrowserWindow, shell } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  globalShortcut,
+  shell,
+  Notification,
+} from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log, { create } from 'electron-log';
 import { menubar } from 'menubar';
+import Preferences from './preferences';
 // import MenuBuilder from './menu';
 
 export default class AppUpdater {
@@ -26,6 +33,7 @@ export default class AppUpdater {
 }
 
 let mainWindow: BrowserWindow | null = null;
+const preferences = new Preferences();
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
@@ -52,7 +60,7 @@ const installExtensions = async () => {
     .catch(console.log);
 };
 
-const createWindow = async () => {
+const createRecordingWindow = async () => {
   if (
     process.env.NODE_ENV === 'development' ||
     process.env.DEBUG_PROD === 'true'
@@ -69,30 +77,19 @@ const createWindow = async () => {
   };
 
   mainWindow = new BrowserWindow({
+    height: 500,
+    width: 500,
     show: false,
-    width: 1024,
-    height: 728,
     icon: getAssetPath('icon.png'),
+    transparent: true,
+    frame: false,
     webPreferences: {
       nodeIntegration: true,
+      backgroundThrottling: false,
     },
   });
 
   mainWindow.loadURL(`file://${__dirname}/index.html`);
-
-  // @TODO: Use 'ready-to-show' event
-  //        https://github.com/electron/electron/blob/master/docs/api/browser-window.md#using-ready-to-show-event
-  mainWindow.webContents.on('did-finish-load', () => {
-    if (!mainWindow) {
-      throw new Error('"mainWindow" is not defined');
-    }
-    if (process.env.START_MINIMIZED) {
-      mainWindow.minimize();
-    } else {
-      mainWindow.show();
-      mainWindow.focus();
-    }
-  });
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -113,13 +110,6 @@ const createWindow = async () => {
 };
 
 const createMenubar = async () => {
-  if (
-    process.env.NODE_ENV === 'development' ||
-    process.env.DEBUG_PROD === 'true'
-  ) {
-    await installExtensions();
-  }
-
   const mb = menubar({
     index: `file://${__dirname}/index.html`,
     tooltip: 'Voice Notes',
@@ -141,6 +131,12 @@ const createMenubar = async () => {
   new AppUpdater();
 };
 
+function showNotification(title: string, body: string) {
+  new Notification({ title, body }).show();
+}
+
+createMenubar();
+
 /**
  * Add event listeners...
  */
@@ -153,8 +149,20 @@ app.on('window-all-closed', () => {
   }
 });
 
-app.on('ready', () => {
-  createMenubar();
+app.on('ready', async () => {
+  const hotKey = await preferences.getHotKey();
+  globalShortcut.register(hotKey, () => {
+    if (mainWindow === null) {
+      createRecordingWindow();
+      showNotification('Recording Started', 'Transcibing your voice...');
+    } else {
+      mainWindow.close();
+      showNotification(
+        'Recording Completed',
+        'Your recording and transcript can be accessed from the menu bar application'
+      );
+    }
+  });
 });
 
 app.on('activate', () => {
