@@ -22,7 +22,9 @@ import {
 import { autoUpdater } from 'electron-updater';
 import log, { create } from 'electron-log';
 import { menubar } from 'menubar';
+import { Readable } from 'stream';
 import Preferences from './preferences';
+import { RecordingManager } from './recording-manager';
 // import MenuBuilder from './menu';
 
 export default class AppUpdater {
@@ -35,6 +37,7 @@ export default class AppUpdater {
 
 let mainWindow: BrowserWindow | null = null;
 const preferences = new Preferences();
+const recordingManager = new RecordingManager();
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
@@ -78,8 +81,6 @@ const createRecordingWindow = async () => {
   };
 
   mainWindow = new BrowserWindow({
-    height: 500,
-    width: 500,
     show: false,
     icon: getAssetPath('icon.png'),
     transparent: true,
@@ -150,10 +151,20 @@ app.on('window-all-closed', () => {
   }
 });
 
+const bufferToStream = (buffer: Buffer): Readable => {
+  const stream = new Readable();
+  stream.push(buffer);
+  stream.push(null);
+  return stream;
+};
+
 app.on('ready', async () => {
   const hotKey = await preferences.getHotKey();
 
-  ipcMain.on('recording:saved', () => {
+  ipcMain.on('recording:saved', async (_event, data) => {
+    const readStream = bufferToStream(Buffer.from(data));
+    await recordingManager.createRecording(readStream);
+
     if (mainWindow !== null) {
       mainWindow.close();
       showNotification(
