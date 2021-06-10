@@ -14,5 +14,8 @@
     "postinstall": "yarn electron-rebuild"
   },
   "license": "MIT",
-  "dependencies": {}
+  "dependencies": {
+    "deepspeech": "^0.9.3",
+    "ffmpeg-static": "^4.3.0"
+  }
 }
