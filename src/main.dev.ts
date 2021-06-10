@@ -13,8 +13,9 @@ import 'regenerator-runtime/runtime';
 import path from 'path';
 import { app, BrowserWindow, shell } from 'electron';
 import { autoUpdater } from 'electron-updater';
-import log from 'electron-log';
-import MenuBuilder from './menu';
+import log, { create } from 'electron-log';
+import { menubar } from 'menubar';
+// import MenuBuilder from './menu';
 
 export default class AppUpdater {
   constructor() {
@@ -97,8 +98,8 @@ const createWindow = async () => {
     mainWindow = null;
   });
 
-  const menuBuilder = new MenuBuilder(mainWindow);
-  menuBuilder.buildMenu();
+  // const menuBuilder = new MenuBuilder(mainWindow);
+  // menuBuilder.buildMenu();
 
   // Open urls in the user's browser
   mainWindow.webContents.on('new-window', (event, url) => {
@@ -107,6 +108,35 @@ const createWindow = async () => {
   });
 
   // Remove this if your app does not use auto updates
+  // eslint-disable-next-line
+  new AppUpdater();
+};
+
+const createMenubar = async () => {
+  if (
+    process.env.NODE_ENV === 'development' ||
+    process.env.DEBUG_PROD === 'true'
+  ) {
+    await installExtensions();
+  }
+
+  const mb = menubar({
+    index: `file://${__dirname}/index.html`,
+    tooltip: 'Voice Notes',
+    browserWindow: {
+      transparent: false,
+      alwaysOnTop: false,
+      width: 1024,
+      height: 728,
+      webPreferences: {
+        nodeIntegration: true,
+      },
+    },
+  });
+
+  mb.on('after-create-window', () => {
+    mb.window?.webContents.openDevTools({ mode: 'right' });
+  });
   // eslint-disable-next-line
   new AppUpdater();
 };
@@ -123,10 +153,12 @@ app.on('window-all-closed', () => {
   }
 });
 
-app.whenReady().then(createWindow).catch(console.log);
+app.on('ready', () => {
+  createMenubar();
+});
 
 app.on('activate', () => {
   // On macOS it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
-  if (mainWindow === null) createWindow();
+  // if (mainWindow === null) createWindow();
 });
