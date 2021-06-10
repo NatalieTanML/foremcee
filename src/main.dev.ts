@@ -17,6 +17,7 @@ import {
   globalShortcut,
   shell,
   Notification,
+  ipcMain,
 } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log, { create } from 'electron-log';
@@ -89,7 +90,7 @@ const createRecordingWindow = async () => {
     },
   });
 
-  mainWindow.loadURL(`file://${__dirname}/index.html`);
+  mainWindow.loadURL(`file://${__dirname}/index.html?redirect=recorder`);
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -151,16 +152,23 @@ app.on('window-all-closed', () => {
 
 app.on('ready', async () => {
   const hotKey = await preferences.getHotKey();
-  globalShortcut.register(hotKey, () => {
-    if (mainWindow === null) {
-      createRecordingWindow();
-      showNotification('Recording Started', 'Transcibing your voice...');
-    } else {
+
+  ipcMain.on('recording:saved', () => {
+    if (mainWindow !== null) {
       mainWindow.close();
       showNotification(
         'Recording Completed',
         'Your recording and transcript can be accessed from the menu bar application'
       );
+    }
+  });
+
+  globalShortcut.register(hotKey, () => {
+    if (mainWindow === null) {
+      createRecordingWindow();
+      showNotification('Recording Started', 'Transcibing your voice...');
+    } else {
+      mainWindow.webContents.send('recording:stop', true);
     }
   });
 });
