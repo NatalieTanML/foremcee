@@ -25,6 +25,7 @@ import { menubar } from 'menubar';
 import { Readable } from 'stream';
 import Preferences from './preferences';
 import { RecordingManager } from './recording-manager';
+import SpeechToText from './speech-to-text';
 // import MenuBuilder from './menu';
 
 export default class AppUpdater {
@@ -160,6 +161,16 @@ const bufferToStream = (buffer: Buffer): Readable => {
 
 app.on('ready', async () => {
   const hotKey = await preferences.getHotKey();
+
+  try {
+    // TODO: Present a one time setup UI for dependency installation.
+    console.log('Installing Speech-To-Text dependencies...');
+    await SpeechToText.installDependencies();
+    console.log('Installation complete, starting program...');
+  } catch (err) {
+    console.error(err);
+    throw err;
+  }
 
   ipcMain.on('recording:saved', async (_event, data) => {
     const readStream = bufferToStream(Buffer.from(data));

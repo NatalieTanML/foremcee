@@ -1,19 +1,12 @@
-import { promisify } from 'util';
-import { access } from 'fs';
 import path from 'path';
+import { writeFile } from 'fs';
+import { promisify } from 'util';
 import { spawn } from 'child_process';
 import ffmpegPath from 'ffmpeg-static';
+import { exists } from '../utils';
+import SpeechToText from '../speech-to-text';
 
-const accessAsync = promisify(access);
-
-const exists = async (dir: string): Promise<boolean> => {
-  try {
-    await accessAsync(dir);
-    return true;
-  } catch (err) {
-    return false;
-  }
-};
+const writeFileAsync = promisify(writeFile);
 
 const webmToWav = async (
   webmFileDir: string,
@@ -49,12 +42,15 @@ export default class Recording {
 
   #defaultTranscriptFilename = 'transcript.txt';
 
+  #speechToText: SpeechToText;
+
   constructor(
     public readonly title: string,
     public readonly datetime: Date,
     directory: string
   ) {
     this.#directory = directory;
+    this.#speechToText = new SpeechToText();
   }
 
   async getAudio(): Promise<string> {
@@ -85,8 +81,9 @@ export default class Recording {
     const txtExist = await exists(txtPath);
 
     if (!txtExist) {
-      // TODO: Transcribe audio using deepspeech and store it.
       const audioDir = await this.getAudio();
+      const transcript = await this.#speechToText.transcribe(audioDir);
+      await writeFileAsync(txtPath, transcript);
     }
 
     return txtPath;
