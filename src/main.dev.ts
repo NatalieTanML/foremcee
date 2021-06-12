@@ -119,8 +119,8 @@ const createMenubar = async () => {
     browserWindow: {
       transparent: false,
       alwaysOnTop: false,
-      width: 1024,
-      height: 728,
+      width: 450,
+      height: 600,
       webPreferences: {
         nodeIntegration: true,
       },

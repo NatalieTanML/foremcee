@@ -3,7 +3,7 @@ import React from 'react';
 import { HiTrash, HiPencil, HiPlay } from 'react-icons/hi';
 import ListButton from '../ListButton';
 
-const ListItem: React.FC = () => {
+const ListItem = () => {
   return (
     <div className="flex flex-row relative block bg-gray-50 rounded-md p-3 mb-2 hover:bg-indigo-50">
       <div className="flex flex-1 items-center">

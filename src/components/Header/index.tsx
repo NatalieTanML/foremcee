@@ -3,12 +3,12 @@ import React from 'react';
 import { IconContext } from 'react-icons';
 import { HiOutlineCog } from 'react-icons/hi';
 
-const Header: React.FC = () => {
+const Header = () => {
   return (
     <div>
       <div className="flex flex-row">
         <div className="flex flex-1 items-center">
-          <p className="flex-grow text-3xl font-bold tracking-tight text-indigo-500">
+          <p className="flex-grow text-2xl font-bold tracking-tight text-indigo-500">
             Voice Notes
           </p>
           <button
