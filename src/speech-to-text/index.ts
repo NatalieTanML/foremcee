@@ -1,4 +1,3 @@
-import { app } from 'electron';
 import * as deepSpeech from 'deepspeech';
 import { PathLike, createReadStream, mkdir } from 'fs';
 import wav from 'wav';
@@ -10,37 +9,48 @@ import { exists, download } from '../utils';
 const mkdirAsync = promisify(mkdir);
 
 export default class SpeechToText {
-  static #rootDir = path.join(app.getPath('userData'), 'stt');
+  static #getRootDir = (applicationDir: string) =>
+    path.join(applicationDir, 'stt');
 
-  static #modelDir = path.join(SpeechToText.#rootDir, 'model.pbmm');
+  static #getModelDir = (applicationDir: string) =>
+    path.join(SpeechToText.#getRootDir(applicationDir), 'model.pbmm');
 
-  static #scorerDir = path.join(SpeechToText.#rootDir, 'scorer.scorer');
+  static #getScorerDir = (applicationDir: string) =>
+    path.join(SpeechToText.#getRootDir(applicationDir), 'scorer.scorer');
 
   #bufferSize = 512;
 
   #model: deepSpeech.Model;
 
-  static async installDependencies(): Promise<void> {
-    const dependencyDirExist = await exists(SpeechToText.#rootDir);
+  static async installDependencies(applicationDir: string): Promise<void> {
+    const dependencyDir = SpeechToText.#getRootDir(applicationDir);
+    const dependencyDirExist = await exists(dependencyDir);
     if (!dependencyDirExist) {
-      await mkdirAsync(SpeechToText.#rootDir);
+      await mkdirAsync(dependencyDir);
     }
 
-    const modelExist = await exists(SpeechToText.#modelDir);
-    const scorerExist = await exists(SpeechToText.#scorerDir);
+    const modelDir = SpeechToText.#getModelDir(applicationDir);
+    const scorerDir = SpeechToText.#getScorerDir(applicationDir);
+
+    const modelExist = await exists(modelDir);
+    const scorerExist = await exists(scorerDir);
 
     if (!modelExist) {
-      await download(STT_MODEL_URL, SpeechToText.#modelDir);
+      await download(STT_MODEL_URL, modelDir);
     }
 
     if (!scorerExist) {
-      await download(STT_SCORER_URL, SpeechToText.#scorerDir);
+      await download(STT_SCORER_URL, scorerDir);
     }
   }
 
-  constructor() {
-    this.#model = new deepSpeech.Model(SpeechToText.#modelDir);
-    this.#model.enableExternalScorer(SpeechToText.#scorerDir);
+  constructor(applicationDir: string) {
+    this.#model = new deepSpeech.Model(
+      SpeechToText.#getModelDir(applicationDir)
+    );
+    this.#model.enableExternalScorer(
+      SpeechToText.#getScorerDir(applicationDir)
+    );
   }
 
   async transcribe(wavDir: PathLike): Promise<string> {

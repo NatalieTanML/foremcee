@@ -1,9 +1,9 @@
-import { app } from 'electron';
 import { promisify } from 'util';
 import { createWriteStream, mkdirSync, readdir, rmdir, mkdir } from 'fs';
 import path from 'path';
 import { Readable } from 'stream';
 import Recording from './Recording';
+import SpeechToText from '../speech-to-text';
 
 const readdirAsync = promisify(readdir);
 const rmdirAsync = promisify(rmdir);
@@ -16,9 +16,13 @@ const formatStorageNameForDate = (name: string) =>
   name.replaceAll('_', ':').replaceAll('dot', '.');
 
 export default class RecordingManager {
-  #rootDir = path.join(app.getPath('userData'), 'recordings');
+  #rootDir: string;
 
-  constructor() {
+  #speechToText: SpeechToText;
+
+  constructor(applicationDir: string) {
+    this.#rootDir = path.join(applicationDir, 'recordings');
+    this.#speechToText = new SpeechToText(applicationDir);
     try {
       mkdirSync(this.#rootDir);
     } catch (err) {
@@ -37,7 +41,8 @@ export default class RecordingManager {
           new Recording(
             formatStorageNameForDate(folder.name),
             new Date(formatStorageNameForDate(folder.name)),
-            path.join(this.#rootDir, folder.name)
+            path.join(this.#rootDir, folder.name),
+            this.#speechToText
           )
       );
   }

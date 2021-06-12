@@ -36,9 +36,9 @@ const webmToWav = async (
 };
 
 export default class Recording {
-  #directory: string;
-
   static defaultAudioName = 'audio';
+
+  #directory: string;
 
   #defaultTranscriptFilename = 'transcript.txt';
 
@@ -47,10 +47,11 @@ export default class Recording {
   constructor(
     public readonly title: string,
     public readonly datetime: Date,
-    directory: string
+    directory: string,
+    speechToText: SpeechToText
   ) {
     this.#directory = directory;
-    this.#speechToText = new SpeechToText();
+    this.#speechToText = speechToText;
   }
 
   async getAudio(): Promise<string> {
