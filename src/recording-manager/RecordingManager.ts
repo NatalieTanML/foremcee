@@ -44,7 +44,8 @@ export default class RecordingManager {
             path.join(this.#rootDir, folder.name),
             this.#speechToText
           )
-      );
+      )
+      .reverse();
   }
 
   async createRecording(readStream: Readable): Promise<void> {
