@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ipcRenderer } from 'electron';
 import { CgSpinner } from 'react-icons/cg';
 import { IconContext } from 'react-icons';
@@ -9,39 +9,53 @@ import ListHeader from '../components/ListHeader';
 import ListItem from '../components/ListItem';
 
 const MenuBar = () => {
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const recordingManager = useRef<RecordingManager | null>(null);
+  const [
+    recordingManager,
+    setRecordingManager,
+  ] = useState<RecordingManager | null>(null);
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [groupRecordings, setGroupRecordings] = useState<
     Record<string, Recording[]>
   >({});
 
-  // Current way doesn't seem ideal as useEffect runs on every component re-render.
-  // The ideal behaviour would be to execute this effect only once, then followed by a
-  // re-render so there would be an opportunity to use data from recordingManager to
-  // update the UI right away.
   useEffect(() => {
     ipcRenderer.on('init-menubar', async (_event, applicationDir: string) => {
-      recordingManager.current = new RecordingManager(applicationDir);
-      const files: Recording[] = await recordingManager.current.getRecordings();
-      setRecordings(files);
-      setIsLoading(false);
+      setRecordingManager(new RecordingManager(applicationDir));
     });
   });
 
   useEffect(() => {
-    const g = recordings.reduce((groups, rec) => {
-      const key = rec.datetime.toDateString();
-      if (!groups[key]) {
-        groups[key] = [];
-      }
-      groups[key].push(rec);
-      return groups;
-    }, {} as Record<string, Recording[]>);
-    setGroupRecordings(g);
+    // The purpose of having this cancel variable is to prevent memory leaks
+    // by using it in the callback and the cleanup function.
+    // Ref: https://dev.to/jexperton/how-to-fix-the-react-memory-leak-warning-d4i
+    let cancel = false;
+    recordingManager
+      ?.getRecordings()
+      .then((recs) => {
+        // eslint-disable-next-line promise/always-return
+        if (cancel) return;
+        setRecordings(recs);
+      })
+      .catch(console.error);
+    return () => {
+      cancel = true;
+    };
+  });
+
+  useEffect(() => {
+    setGroupRecordings(
+      recordings.reduce((groups, rec) => {
+        const key = rec.datetime.toDateString();
+        if (!groups[key]) {
+          groups[key] = [];
+        }
+        groups[key].push(rec);
+        return groups;
+      }, {} as Record<string, Recording[]>)
+    );
   }, [recordings]);
 
-  return isLoading ? (
+  return recordingManager === null ? (
     <div className="container p-20 flex flex-col items-center justify-center content-center">
       <div className="self-center">
         <IconContext.Provider
@@ -58,7 +72,11 @@ const MenuBar = () => {
         <>
           <ListHeader key={k} title={k} />
           {v.map((rec) => (
-            <ListItem key={rec.datetime.getTime()} rec={rec} />
+            <ListItem
+              key={rec.datetime.getTime()}
+              rec={rec}
+              recM={recordingManager}
+            />
           ))}
         </>
       ))}

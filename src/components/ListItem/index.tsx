@@ -2,14 +2,15 @@ import React, { useState } from 'react';
 import { shell } from 'electron';
 
 import { HiTrash, HiPencil, HiPlay } from 'react-icons/hi';
-import { Recording } from '../../recording-manager';
+import { Recording, RecordingManager } from '../../recording-manager';
 import ListButton from '../ListButton';
 
-const ListItem = (prop: { rec: Recording }) => {
+const ListItem = (prop: { rec: Recording; recM: RecordingManager }) => {
   const [isWavLoading, setIsWavLoading] = useState<boolean>(false);
   const [isTxtLoading, setIsTxtLoading] = useState<boolean>(false);
   const [isDelLoading, setIsDelLoading] = useState<boolean>(false);
   const recording = prop.rec;
+  const recordingManager = prop.recM;
 
   return (
     <div className="flex flex-row relative block bg-gray-50 rounded-md p-3 mb-2 hover:bg-indigo-50">
@@ -51,7 +52,7 @@ const ListItem = (prop: { rec: Recording }) => {
         <ListButton
           onClick={() => {
             setIsDelLoading(true);
-            // recordingManager.deleteRecording(recording);
+            recordingManager.deleteRecording(recording);
             setIsDelLoading(false);
           }}
           isLoading={isDelLoading}
