@@ -20,7 +20,7 @@ import {
   ipcMain,
 } from 'electron';
 import { autoUpdater } from 'electron-updater';
-import log, { create } from 'electron-log';
+import log from 'electron-log';
 import { menubar } from 'menubar';
 import { Readable } from 'stream';
 import Preferences from './preferences';
@@ -36,9 +36,12 @@ export default class AppUpdater {
   }
 }
 
+app.allowRendererProcessReuse = false;
+
+const APPLICATION_DIR = app.getPath('userData');
 let mainWindow: BrowserWindow | null = null;
 const preferences = new Preferences();
-const recordingManager = new RecordingManager();
+const recordingManager = new RecordingManager(APPLICATION_DIR);
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
@@ -112,15 +115,15 @@ const createRecordingWindow = async () => {
   new AppUpdater();
 };
 
-const createMenubar = async () => {
+const createMenubar = async (applicationDir: string) => {
   const mb = menubar({
     index: `file://${__dirname}/index.html`,
     tooltip: 'Voice Notes',
     browserWindow: {
       transparent: false,
       alwaysOnTop: false,
-      width: 1024,
-      height: 728,
+      width: 450,
+      height: 600,
       webPreferences: {
         nodeIntegration: true,
       },
@@ -129,7 +132,9 @@ const createMenubar = async () => {
 
   mb.on('after-create-window', () => {
     mb.window?.webContents.openDevTools({ mode: 'right' });
+    mb.window?.webContents.send('init-menubar', applicationDir);
   });
+
   // eslint-disable-next-line
   new AppUpdater();
 };
@@ -137,8 +142,6 @@ const createMenubar = async () => {
 function showNotification(title: string, body: string) {
   new Notification({ title, body }).show();
 }
-
-createMenubar();
 
 /**
  * Add event listeners...
@@ -165,7 +168,7 @@ app.on('ready', async () => {
   try {
     // TODO: Present a one time setup UI for dependency installation.
     console.log('Installing Speech-To-Text dependencies...');
-    await SpeechToText.installDependencies();
+    await SpeechToText.installDependencies(APPLICATION_DIR);
     console.log('Installation complete, starting program...');
   } catch (err) {
     console.error(err);
@@ -193,6 +196,8 @@ app.on('ready', async () => {
       mainWindow.webContents.send('recording:stop', true);
     }
   });
+
+  createMenubar(APPLICATION_DIR);
 });
 
 app.on('activate', () => {
