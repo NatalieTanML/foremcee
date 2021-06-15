@@ -45,7 +45,7 @@ export default class RecordingManager {
             this.#speechToText
           )
       )
-      .reverse();
+      .sort((x, y) => y.datetime.getTime() - x.datetime.getTime());
   }
 
   async createRecording(readStream: Readable): Promise<void> {

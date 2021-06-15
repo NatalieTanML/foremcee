@@ -13,10 +13,18 @@ const MenuBar = () => {
     recordingManager,
     setRecordingManager,
   ] = useState<RecordingManager | null>(null);
-  const [recordings, setRecordings] = useState<Recording[]>([]);
-  const [groupRecordings, setGroupRecordings] = useState<
-    Record<string, Recording[]>
-  >({});
+  const [recordings, setRecordings] = useState<Record<string, Recording[]>>({});
+
+  const groupRecordingsByDate = (recs: Recording[]) => {
+    return recs.reduce((groups, rec) => {
+      const key = rec.datetime.toDateString();
+      if (!groups[key]) {
+        groups[key] = [];
+      }
+      groups[key].push(rec);
+      return groups;
+    }, {} as Record<string, Recording[]>);
+  };
 
   useEffect(() => {
     ipcRenderer.on('init-menubar', async (_event, applicationDir: string) => {
@@ -33,27 +41,15 @@ const MenuBar = () => {
       ?.getRecordings()
       .then((recs) => {
         // eslint-disable-next-line promise/always-return
-        if (cancel) return;
-        setRecordings(recs);
+        if (!cancel) {
+          setRecordings(groupRecordingsByDate(recs));
+        }
       })
       .catch(console.error);
     return () => {
       cancel = true;
     };
   });
-
-  useEffect(() => {
-    setGroupRecordings(
-      recordings.reduce((groups, rec) => {
-        const key = rec.datetime.toDateString();
-        if (!groups[key]) {
-          groups[key] = [];
-        }
-        groups[key].push(rec);
-        return groups;
-      }, {} as Record<string, Recording[]>)
-    );
-  }, [recordings]);
 
   return recordingManager === null ? (
     <div className="container p-20 flex flex-col items-center justify-center content-center">
@@ -68,14 +64,14 @@ const MenuBar = () => {
   ) : (
     <div className="container mx-auto px-4 py-3 w-full bg-white">
       <Header />
-      {Object.entries(groupRecordings).map(([k, v]) => (
+      {Object.entries(recordings).map(([k, v]) => (
         <>
           <ListHeader key={k} title={k} />
           {v.map((rec) => (
             <ListItem
               key={rec.datetime.getTime()}
-              rec={rec}
-              recM={recordingManager}
+              recording={rec}
+              recordingManager={recordingManager}
             />
           ))}
         </>

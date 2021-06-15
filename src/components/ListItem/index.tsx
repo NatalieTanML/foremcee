@@ -5,12 +5,15 @@ import { HiTrash, HiPencil, HiPlay } from 'react-icons/hi';
 import { Recording, RecordingManager } from '../../recording-manager';
 import ListButton from '../ListButton';
 
-const ListItem = (prop: { rec: Recording; recM: RecordingManager }) => {
+type Props = {
+  recording: Recording;
+  recordingManager: RecordingManager;
+};
+
+const ListItem = ({ recording, recordingManager }: Props) => {
   const [isWavLoading, setIsWavLoading] = useState<boolean>(false);
   const [isTxtLoading, setIsTxtLoading] = useState<boolean>(false);
   const [isDelLoading, setIsDelLoading] = useState<boolean>(false);
-  const recording = prop.rec;
-  const recordingManager = prop.recM;
 
   return (
     <div className="flex flex-row relative block bg-gray-50 rounded-md p-3 mb-2 hover:bg-indigo-50">
@@ -30,29 +33,37 @@ const ListItem = (prop: { rec: Recording; recM: RecordingManager }) => {
         <ListButton
           onClick={async () => {
             setIsWavLoading(true);
-            shell.openPath(await recording.getAudio());
+            await recording
+              .getAudio()
+              .then(shell.openPath)
+              .catch(console.error);
             setIsWavLoading(false);
           }}
           isLoading={isWavLoading}
-          cname="mr-3"
+          addStyleName="mr-3"
         >
           <HiPlay />
         </ListButton>
         <ListButton
           onClick={async () => {
             setIsTxtLoading(true);
-            shell.openPath(await recording.getTranscript());
+            await recording
+              .getTranscript()
+              .then(shell.openPath)
+              .catch(console.error);
             setIsTxtLoading(false);
           }}
           isLoading={isTxtLoading}
-          cname="mr-3"
+          addStyleName="mr-3"
         >
           <HiPencil />
         </ListButton>
         <ListButton
-          onClick={() => {
+          onClick={async () => {
             setIsDelLoading(true);
-            recordingManager.deleteRecording(recording);
+            await recordingManager
+              .deleteRecording(recording)
+              .catch(console.error);
             setIsDelLoading(false);
           }}
           isLoading={isDelLoading}
