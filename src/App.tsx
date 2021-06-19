@@ -1,29 +1,34 @@
-import React from 'react';
-import {
-  BrowserRouter as Router,
-  Switch,
-  Route,
-  RouteProps,
-} from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { HashRouter as Router, Switch, Route } from 'react-router-dom';
 import './App.global.css';
+import { ipcRenderer } from 'electron';
+import { RecordingManager } from './recording-manager';
 import MenuBar from './views/MenuBar';
 import Recorder from './views/Recorder';
-
-function Redirect(AltComponent: React.FC<Partial<RouteProps>>) {
-  return function Render({ location }: Partial<RouteProps>) {
-    const path = new URLSearchParams(location?.search).get('redirect');
-    if (path === 'recorder') return <Recorder />;
-    return <AltComponent />;
-  };
-}
+import Settings from './views/Settings';
 
 export default function App() {
+  const [
+    recordingManager,
+    setRecordingManager,
+  ] = useState<RecordingManager | null>(null);
+
+  useEffect(() => {
+    ipcRenderer.on('init-menubar', async (_event, applicationDir: string) => {
+      setRecordingManager(new RecordingManager(applicationDir));
+    });
+  }, []);
+
   return (
     <Router>
       <Switch>
-        <Route path="/" component={Redirect(MenuBar)} />
-        {/* <Route path="/settings" component={Redirect(Settings)} /> */}
-        <Route path="/recorder" component={Recorder} />
+        <Route
+          exact
+          path="/"
+          component={() => <MenuBar recordingManager={recordingManager} />}
+        />
+        <Route exact path="/settings" component={Settings} />
+        <Route exact path="/recorder" component={Recorder} />
       </Switch>
     </Router>
   );
