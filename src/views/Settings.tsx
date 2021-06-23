@@ -10,6 +10,7 @@ const Settings = () => {
   const [hotKey, setHotKey] = useState<string>();
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [inputValue, setInputValue] = useState<string | undefined>('');
+  const [isKeyUp, setIsKeyUp] = useState<boolean>(false);
 
   const styleName = isEditing
     ? 'capitalize flex-auto px-4 py-2 rounded-md appearance-none border-2 border-indigo-50 bg-white text-gray-700 hover:border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent cursor-text'
@@ -26,8 +27,14 @@ const Settings = () => {
   };
 
   const handleInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.repeat || e.type === 'keyup') return;
-    const str = inputValue === '' ? `${e.key}` : `${inputValue}+${e.key}`;
+    if (e.repeat) return;
+    if (e.type === 'keyup') {
+      setIsKeyUp(true);
+      return;
+    }
+    const str =
+      inputValue === '' || isKeyUp ? `${e.key}` : `${inputValue}+${e.key}`;
+    setIsKeyUp(false);
     setInputValue(str);
   };
 
@@ -35,6 +42,7 @@ const Settings = () => {
     ipcRenderer.send('hotKey:update', inputValue);
     setHotKey(inputValue);
     setIsEditing(false);
+    setIsKeyUp(false);
   };
 
   useEffect(() => {
