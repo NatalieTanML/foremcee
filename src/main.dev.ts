@@ -144,6 +144,15 @@ function showNotification(title: string, body: string) {
   new Notification({ title, body }).show();
 }
 
+function startRecording() {
+  if (mainWindow === null) {
+    createRecordingWindow();
+    showNotification('Recording Started', 'Transcibing your voice...');
+  } else {
+    mainWindow.webContents.send('recording:stop', true);
+  }
+}
+
 /**
  * Add event listeners...
  */
@@ -189,22 +198,15 @@ app.on('ready', async () => {
     }
   });
 
-  globalShortcut.register(hotKey, () => {
-    if (mainWindow === null) {
-      createRecordingWindow();
-      showNotification('Recording Started', 'Transcibing your voice...');
-    } else {
-      mainWindow.webContents.send('recording:stop', true);
-    }
-  });
-
   ipcMain.on('hotKey:update', async (_event, data) => {
-    console.log('Hotkey update');
-    console.log(data);
-    // globalShortcut.register(data, () => {
-
-    // })
+    globalShortcut.unregisterAll();
+    globalShortcut.register(data, () => {
+      startRecording();
+    });
+    preferences.updateHotKey(data);
   });
+
+  globalShortcut.register(hotKey, () => startRecording());
 
   createMenubar(APPLICATION_DIR);
 });
