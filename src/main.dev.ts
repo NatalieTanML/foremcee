@@ -95,7 +95,7 @@ const createRecordingWindow = async () => {
     },
   });
 
-  mainWindow.loadURL(`file://${__dirname}/index.html?redirect=recorder`);
+  mainWindow.loadURL(`file://${__dirname}/index.html#/recorder`);
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -126,6 +126,7 @@ const createMenubar = async (applicationDir: string) => {
       height: 600,
       webPreferences: {
         nodeIntegration: true,
+        enableRemoteModule: true,
       },
     },
   });
@@ -141,6 +142,15 @@ const createMenubar = async (applicationDir: string) => {
 
 function showNotification(title: string, body: string) {
   new Notification({ title, body }).show();
+}
+
+function startRecording() {
+  if (mainWindow === null) {
+    createRecordingWindow();
+    showNotification('Recording Started', 'Transcibing your voice...');
+  } else {
+    mainWindow.webContents.send('recording:stop', true);
+  }
 }
 
 /**
@@ -188,14 +198,20 @@ app.on('ready', async () => {
     }
   });
 
-  globalShortcut.register(hotKey, () => {
-    if (mainWindow === null) {
-      createRecordingWindow();
-      showNotification('Recording Started', 'Transcibing your voice...');
-    } else {
-      mainWindow.webContents.send('recording:stop', true);
+  ipcMain.on('hotKey:update', async (event, newHotKey) => {
+    try {
+      globalShortcut.unregisterAll();
+      globalShortcut.register(newHotKey, startRecording);
+      await preferences.updateHotKey(newHotKey);
+      event.reply('hotKey:success');
+    } catch (err) {
+      event.reply('hotKey:fail', err);
+      // Fallback to previous hotkey
+      globalShortcut.register(hotKey, startRecording);
     }
   });
+
+  globalShortcut.register(hotKey, startRecording);
 
   createMenubar(APPLICATION_DIR);
 });
