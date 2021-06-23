@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useHistory } from 'react-router-dom';
 import { ipcRenderer } from 'electron';
 import { HiPencil, HiX, HiCheck } from 'react-icons/hi';
 import { IconContext } from 'react-icons';
@@ -11,6 +12,8 @@ const Settings = () => {
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [inputValue, setInputValue] = useState<string | undefined>('');
   const [isKeyUp, setIsKeyUp] = useState<boolean>(false);
+
+  const history = useHistory();
 
   const styleName = isEditing
     ? 'capitalize flex-auto px-4 py-2 rounded-md appearance-none border-2 border-indigo-50 bg-white text-gray-700 hover:border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent cursor-text'
@@ -40,8 +43,13 @@ const Settings = () => {
 
   const updateHotKey = () => {
     ipcRenderer.send('hotKey:update', inputValue);
-    setHotKey(inputValue);
-    setIsEditing(false);
+    ipcRenderer.on('hotKey:success', () => {
+      setHotKey(inputValue);
+      setIsEditing(false);
+    });
+    ipcRenderer.on('hotKey:fail', (_event, arg) => {
+      console.error(arg);
+    });
     setIsKeyUp(false);
   };
 
@@ -59,7 +67,11 @@ const Settings = () => {
 
   return (
     <div className="container mx-auto px-4 py-3 w-full bg-white">
-      <Header />
+      <Header
+        title="Settings"
+        btnContent={<HiX />}
+        handleClick={() => history.push('/')}
+      />
       <div className="block mt-4 mb-2 text-xl font-semibold text-gray-800">
         HotKey Configuration
       </div>

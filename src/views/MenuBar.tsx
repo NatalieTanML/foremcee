@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import { useHistory } from 'react-router-dom';
 import { CgSpinner } from 'react-icons/cg';
 import { IconContext } from 'react-icons';
+import { HiOutlineCog } from 'react-icons/hi';
 import { Recording, RecordingManager } from '../recording-manager';
 
 import Header from '../components/Header';
@@ -13,6 +15,8 @@ const MenuBar = ({
   recordingManager: RecordingManager | null;
 }) => {
   const [recordings, setRecordings] = useState<Record<string, Recording[]>>({});
+
+  const history = useHistory();
 
   const groupRecordingsByDate = (recs: Recording[]) => {
     return recs.reduce((groups, rec) => {
@@ -56,7 +60,11 @@ const MenuBar = ({
     </div>
   ) : (
     <div className="container mx-auto px-4 py-3 w-full bg-white">
-      <Header />
+      <Header
+        title="Voice Notes"
+        btnContent={<HiOutlineCog />}
+        handleClick={() => history.push('/settings')}
+      />
       {Object.entries(recordings).map(([k, v]) => (
         <React.Fragment key={k}>
           <ListHeader title={k} />

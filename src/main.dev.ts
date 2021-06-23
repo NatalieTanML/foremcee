@@ -198,15 +198,20 @@ app.on('ready', async () => {
     }
   });
 
-  ipcMain.on('hotKey:update', async (_event, data) => {
-    globalShortcut.unregisterAll();
-    globalShortcut.register(data, () => {
-      startRecording();
-    });
-    preferences.updateHotKey(data);
+  ipcMain.on('hotKey:update', async (event, newHotKey) => {
+    try {
+      globalShortcut.unregisterAll();
+      globalShortcut.register(newHotKey, startRecording);
+      await preferences.updateHotKey(newHotKey);
+      event.reply('hotKey:success');
+    } catch (err) {
+      event.reply('hotKey:fail', err);
+      // Fallback to previous hotkey
+      globalShortcut.register(hotKey, startRecording);
+    }
   });
 
-  globalShortcut.register(hotKey, () => startRecording());
+  globalShortcut.register(hotKey, startRecording);
 
   createMenubar(APPLICATION_DIR);
 });

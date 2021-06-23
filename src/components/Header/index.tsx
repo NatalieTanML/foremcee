@@ -1,19 +1,13 @@
 import React from 'react';
-import { useHistory, useLocation } from 'react-router-dom';
-
 import { IconContext } from 'react-icons';
-import { HiOutlineCog, HiX } from 'react-icons/hi';
 
-const Header = () => {
-  const history = useHistory();
-  const isMenubar = useLocation().pathname === '/';
+type Props = {
+  title: string;
+  btnContent: React.ReactNode;
+  handleClick: () => void;
+};
 
-  const title = isMenubar ? 'Voice Notes' : 'Settings';
-  const btnContent = isMenubar ? <HiOutlineCog /> : <HiX />;
-  const handleClick = isMenubar
-    ? () => history.push('/settings')
-    : () => history.push('/');
-
+const Header = ({ title, btnContent, handleClick }: Props) => {
   return (
     <div className="flex flex-row items-center">
       <div className="flex flex-1 items-center">
