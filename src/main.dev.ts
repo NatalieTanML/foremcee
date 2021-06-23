@@ -198,6 +198,14 @@ app.on('ready', async () => {
     }
   });
 
+  ipcMain.on('hotKey:update', async (_event, data) => {
+    console.log('Hotkey update');
+    console.log(data);
+    // globalShortcut.register(data, () => {
+
+    // })
+  });
+
   createMenubar(APPLICATION_DIR);
 });
 
