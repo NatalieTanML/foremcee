@@ -9,17 +9,20 @@ type Props = {
   children?: React.ReactNode;
   // eslint-disable-next-line react/require-default-props
   addStyleName?: string;
+  // eslint-disable-next-line react/require-default-props
+  addStyleNameLoading?: string;
 };
 
-const ListButton = ({
+const IconButton = ({
   onClick,
   isLoading,
   children,
   addStyleName = '',
+  addStyleNameLoading = '',
 }: Props) => {
   const styleName = isLoading
-    ? `flex flex-col rounded-md w-10 h-10 text-white bg-indigo-600 disabled:opacity-50 cursor-wait justify-center items-center ${addStyleName}`
-    : `flex flex-col rounded-md w-10 h-10 text-indigo-500 hover:stroke-current hover:text-white hover:bg-indigo-500 hover:border-transparent focus:outline-none active:bg-indigo-600 justify-center items-center ${addStyleName}`;
+    ? `flex flex-col rounded-md w-10 h-10 justify-center items-center cursor-wait disabled:opacity-50 ${addStyleNameLoading}`
+    : `flex flex-col rounded-md w-10 h-10 justify-center items-center focus:outline-none ${addStyleName}`;
   const btnContent = isLoading ? <CgSpinner /> : children;
   const iconCtx = {
     size: '1.25em',
@@ -38,4 +41,4 @@ const ListButton = ({
   );
 };
 
-export default ListButton;
+export default IconButton;

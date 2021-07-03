@@ -2,10 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { CgSpinner } from 'react-icons/cg';
 import { IconContext } from 'react-icons';
-import { HiOutlineCog } from 'react-icons/hi';
+import {
+  HiOutlineCog,
+  HiSortAscending,
+  HiSortDescending,
+} from 'react-icons/hi';
 import { Recording, RecordingManager } from '../recording-manager';
 
 import Header from '../components/Header';
+import Search from '../components/Search';
+import IconButton from '../components/IconButton';
 import ListHeader from '../components/ListHeader';
 import ListItem from '../components/ListItem';
 
@@ -15,6 +21,7 @@ const MenuBar = ({
   recordingManager: RecordingManager | null;
 }) => {
   const [recordings, setRecordings] = useState<Record<string, Recording[]>>({});
+  const [sortAscending, setSortAscending] = useState<boolean>(false);
 
   const history = useHistory();
 
@@ -39,7 +46,9 @@ const MenuBar = ({
       .then((recs) => {
         // eslint-disable-next-line promise/always-return
         if (!cancel) {
-          setRecordings(groupRecordingsByDate(recs));
+          setRecordings(
+            groupRecordingsByDate(sortAscending ? recs.reverse() : recs)
+          );
         }
       })
       .catch(console.error);
@@ -59,12 +68,22 @@ const MenuBar = ({
       </div>
     </div>
   ) : (
-    <div className="container mx-auto px-4 py-3 w-full bg-white">
+    <div className="container mx-auto px-4 my-3 w-full bg-white">
       <Header
         title="Voice Notes"
         btnContent={<HiOutlineCog />}
         handleClick={() => history.push('/settings')}
       />
+      <div className="flex flex-row mt-4 gap-x-3 items-center">
+        <Search />
+        <IconButton
+          onClick={() => setSortAscending(!sortAscending)}
+          isLoading={false}
+          addStyleName="text-indigo-500 bg-indigo-50 hover:text-white active:text-white hover:bg-indigo-500 active:bg-indigo-600 focus:outline-no"
+        >
+          {sortAscending ? <HiSortAscending /> : <HiSortDescending />}
+        </IconButton>
+      </div>
       {Object.entries(recordings).map(([k, v]) => (
         <React.Fragment key={k}>
           <ListHeader title={k} />
