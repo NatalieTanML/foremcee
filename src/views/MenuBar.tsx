@@ -21,7 +21,9 @@ const MenuBar = ({
   recordingManager: RecordingManager | null;
 }) => {
   const [recordings, setRecordings] = useState<Record<string, Recording[]>>({});
+  const [defaultRecordings, setDefaultRecordings] = useState<Recording[]>([]);
   const [sortAscending, setSortAscending] = useState<boolean>(false);
+  const [input, setInput] = useState<string>('');
 
   const history = useHistory();
 
@@ -36,6 +38,17 @@ const MenuBar = ({
     }, {} as Record<string, Recording[]>);
   };
 
+  const updateInput = async (inputString: string) => {
+    const filtered = defaultRecordings.filter((recording) => {
+      return recording.datetime
+        .toLocaleDateString('en-US', { dateStyle: 'full' })
+        .toLowerCase()
+        .includes(inputString.toLowerCase());
+    });
+    setInput(inputString);
+    setRecordings(groupRecordingsByDate(filtered));
+  };
+
   useEffect(() => {
     // The purpose of having this cancel variable is to prevent memory leaks
     // by using it in the callback and the cleanup function.
@@ -46,6 +59,7 @@ const MenuBar = ({
       .then((recs) => {
         // eslint-disable-next-line promise/always-return
         if (!cancel) {
+          setDefaultRecordings(recs);
           setRecordings(
             groupRecordingsByDate(sortAscending ? recs.reverse() : recs)
           );
@@ -56,6 +70,7 @@ const MenuBar = ({
       cancel = true;
     };
   });
+  // TODO: Fix this dependency issue. Including [] fixes search but breaks the fetching of the data & sort
 
   return recordingManager === null ? (
     <div className="container p-20 flex flex-col items-center justify-center content-center">
@@ -75,11 +90,11 @@ const MenuBar = ({
         handleClick={() => history.push('/settings')}
       />
       <div className="flex flex-row mt-4 gap-x-3 items-center">
-        <Search />
+        <Search keyword={input} setKeyword={updateInput} />
         <IconButton
           onClick={() => setSortAscending(!sortAscending)}
           isLoading={false}
-          addStyleName="text-indigo-500 bg-indigo-50 hover:text-white active:text-white hover:bg-indigo-500 active:bg-indigo-600 focus:outline-no"
+          addStyleName="text-indigo-500 bg-indigo-50 hover:text-white active:text-white hover:bg-indigo-500 active:bg-indigo-600 focus:outline-none"
         >
           {sortAscending ? <HiSortAscending /> : <HiSortDescending />}
         </IconButton>
