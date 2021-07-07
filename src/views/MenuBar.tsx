@@ -21,7 +21,6 @@ const MenuBar = ({
   recordingManager: RecordingManager | null;
 }) => {
   const [recordings, setRecordings] = useState<Record<string, Recording[]>>({});
-  const [defaultRecordings, setDefaultRecordings] = useState<Recording[]>([]);
   const [sortAscending, setSortAscending] = useState<boolean>(false);
   const [input, setInput] = useState<string>('');
 
@@ -38,15 +37,16 @@ const MenuBar = ({
     }, {} as Record<string, Recording[]>);
   };
 
-  const updateInput = async (inputString: string) => {
-    const filtered = defaultRecordings.filter((recording) => {
-      return recording.datetime
+  const filterByCurrentInput = (recs: Recording[]) => {
+    let filtered = recs.filter((recording) =>
+      recording.datetime
         .toLocaleDateString('en-US', { dateStyle: 'full' })
         .toLowerCase()
-        .includes(inputString.toLowerCase());
-    });
-    setInput(inputString);
-    setRecordings(groupRecordingsByDate(filtered));
+        .includes(input.toLowerCase().trim())
+    );
+    // TODO: Include filter/search for recording name once implemented
+    filtered = sortAscending ? filtered.reverse() : filtered;
+    return groupRecordingsByDate(filtered);
   };
 
   useEffect(() => {
@@ -59,10 +59,7 @@ const MenuBar = ({
       .then((recs) => {
         // eslint-disable-next-line promise/always-return
         if (!cancel) {
-          setDefaultRecordings(recs);
-          setRecordings(
-            groupRecordingsByDate(sortAscending ? recs.reverse() : recs)
-          );
+          setRecordings(filterByCurrentInput(recs));
         }
       })
       .catch(console.error);
@@ -70,7 +67,6 @@ const MenuBar = ({
       cancel = true;
     };
   });
-  // TODO: Fix this dependency issue. Including [] fixes search but breaks the fetching of the data & sort
 
   return recordingManager === null ? (
     <div className="container p-20 flex flex-col items-center justify-center content-center">
@@ -90,7 +86,7 @@ const MenuBar = ({
         handleClick={() => history.push('/settings')}
       />
       <div className="flex flex-row mt-4 gap-x-3 items-center">
-        <Search keyword={input} setKeyword={updateInput} />
+        <Search keyword={input} setKeyword={setInput} />
         <IconButton
           onClick={() => setSortAscending(!sortAscending)}
           isLoading={false}
