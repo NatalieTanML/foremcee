@@ -2,20 +2,17 @@ import React from 'react';
 import { CgSpinner } from 'react-icons/cg';
 import { IconContext } from 'react-icons';
 
-type Props = {
+export type Props = {
   onClick: () => void;
-  isLoading: boolean;
-  // eslint-disable-next-line react/require-default-props
+  isLoading?: boolean;
   children?: React.ReactNode;
-  // eslint-disable-next-line react/require-default-props
   addStyleName?: string;
-  // eslint-disable-next-line react/require-default-props
   addStyleNameLoading?: string;
 };
 
 const IconButton = ({
   onClick,
-  isLoading,
+  isLoading = false,
   children,
   addStyleName = '',
   addStyleNameLoading = '',

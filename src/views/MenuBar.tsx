@@ -86,10 +86,14 @@ const MenuBar = ({
         handleClick={() => history.push('/settings')}
       />
       <div className="flex flex-row mt-4 gap-x-3 items-center">
-        <Search keyword={input} setKeyword={setInput} />
+        <Search
+          keyword={input}
+          setKeyword={setInput}
+          title="Search for a recording"
+          placeholder="Search"
+        />
         <IconButton
           onClick={() => setSortAscending(!sortAscending)}
-          isLoading={false}
           addStyleName="text-indigo-500 bg-indigo-50 hover:text-white active:text-white hover:bg-indigo-500 active:bg-indigo-600 focus:outline-none"
         >
           {sortAscending ? <HiSortAscending /> : <HiSortDescending />}

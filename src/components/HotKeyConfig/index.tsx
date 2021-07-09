@@ -78,16 +78,11 @@ const HotKeyConfig = () => {
           />
           <IconButton
             onClick={updateHotKey}
-            isLoading={false}
             addStyleName={isEditing ? btnStyleName : 'hidden'}
           >
             <HiCheck />
           </IconButton>
-          <IconButton
-            onClick={toggleEdit}
-            isLoading={false}
-            addStyleName={btnStyleName}
-          >
+          <IconButton onClick={toggleEdit} addStyleName={btnStyleName}>
             {btnContent}
           </IconButton>
         </div>
