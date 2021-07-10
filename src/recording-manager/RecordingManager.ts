@@ -2,6 +2,7 @@ import { promisify } from 'util';
 import { createWriteStream, mkdirSync, readdir, rmdir, mkdir, stat } from 'fs';
 import path from 'path';
 import { Readable } from 'stream';
+import { v4 as uuidv4 } from 'uuid';
 import Recording from './Recording';
 import SpeechToText from '../speech-to-text';
 
@@ -56,8 +57,7 @@ export default class RecordingManager {
   }
 
   async createRecording(readStream: Readable): Promise<void> {
-    const newFolderName = formatDateForStorage(new Date());
-    const recordingDir = path.join(this.#rootDir, newFolderName);
+    const recordingDir = path.join(this.#rootDir, uuidv4());
 
     await mkdirAsync(recordingDir);
 
