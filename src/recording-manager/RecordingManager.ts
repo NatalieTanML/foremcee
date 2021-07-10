@@ -1,5 +1,13 @@
 import { promisify } from 'util';
-import { createWriteStream, mkdirSync, readdir, rmdir, mkdir, stat } from 'fs';
+import {
+  createWriteStream,
+  mkdirSync,
+  readdir,
+  rmdir,
+  mkdir,
+  stat,
+  rename,
+} from 'fs';
 import path from 'path';
 import { Readable } from 'stream';
 import { v4 as uuidv4 } from 'uuid';
@@ -10,6 +18,7 @@ const readdirAsync = promisify(readdir);
 const rmdirAsync = promisify(rmdir);
 const mkdirAsync = promisify(mkdir);
 const statAsync = promisify(stat);
+const renameAsync = promisify(rename);
 
 export default class RecordingManager {
   #rootDir: string;
@@ -73,5 +82,19 @@ export default class RecordingManager {
     await rmdirAsync(path.join(this.#rootDir, recording.title), {
       recursive: true,
     });
+  }
+
+  async renameRecording(
+    newTitle: string,
+    recording: Recording
+  ): Promise<Recording> {
+    const newDir = path.join(this.#rootDir, newTitle);
+    await renameAsync(path.join(this.#rootDir, recording.title), newDir);
+    return new Recording(
+      newTitle,
+      recording.datetime,
+      newDir,
+      this.#speechToText
+    );
   }
 }
