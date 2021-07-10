@@ -1,5 +1,5 @@
 import { promisify } from 'util';
-import { createWriteStream, mkdirSync, readdir, rmdir, mkdir } from 'fs';
+import { createWriteStream, mkdirSync, readdir, rmdir, mkdir, stat } from 'fs';
 import path from 'path';
 import { Readable } from 'stream';
 import Recording from './Recording';
@@ -8,6 +8,7 @@ import SpeechToText from '../speech-to-text';
 const readdirAsync = promisify(readdir);
 const rmdirAsync = promisify(rmdir);
 const mkdirAsync = promisify(mkdir);
+const statAsync = promisify(stat);
 
 const formatDateForStorage = (datetime: Date) =>
   datetime.toISOString().replaceAll(':', '_').replaceAll('.', 'dot');
@@ -34,18 +35,24 @@ export default class RecordingManager {
 
   async getRecordings(): Promise<Array<Recording>> {
     const items = await readdirAsync(this.#rootDir, { withFileTypes: true });
-    return items
-      .filter((item) => item.isDirectory())
-      .map(
-        (folder) =>
-          new Recording(
-            formatStorageNameForDate(folder.name),
-            new Date(formatStorageNameForDate(folder.name)),
-            path.join(this.#rootDir, folder.name),
-            this.#speechToText
-          )
-      )
-      .sort((x, y) => y.datetime.getTime() - x.datetime.getTime());
+    const recordings = await Promise.all(
+      items
+        .filter((item) => item.isDirectory())
+        .map(
+          async (folder) =>
+            new Recording(
+              folder.name,
+              (
+                await statAsync(path.join(this.#rootDir, folder.name))
+              ).birthtime,
+              path.join(this.#rootDir, folder.name),
+              this.#speechToText
+            )
+        )
+    );
+    return recordings.sort(
+      (x, y) => y.datetime.getTime() - x.datetime.getTime()
+    );
   }
 
   async createRecording(readStream: Readable): Promise<void> {
