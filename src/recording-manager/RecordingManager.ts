@@ -11,12 +11,6 @@ const rmdirAsync = promisify(rmdir);
 const mkdirAsync = promisify(mkdir);
 const statAsync = promisify(stat);
 
-const formatDateForStorage = (datetime: Date) =>
-  datetime.toISOString().replaceAll(':', '_').replaceAll('.', 'dot');
-
-const formatStorageNameForDate = (name: string) =>
-  name.replaceAll('_', ':').replaceAll('dot', '.');
-
 export default class RecordingManager {
   #rootDir: string;
 
@@ -76,9 +70,8 @@ export default class RecordingManager {
   }
 
   async deleteRecording(recording: Recording): Promise<void> {
-    await rmdirAsync(
-      path.join(this.#rootDir, formatDateForStorage(recording.datetime)),
-      { recursive: true }
-    );
+    await rmdirAsync(path.join(this.#rootDir, recording.title), {
+      recursive: true,
+    });
   }
 }
