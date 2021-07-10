@@ -28,7 +28,11 @@ export default function App() {
           component={() => <MenuBar recordingManager={recordingManager} />}
         />
         <Route exact path="/settings" component={Settings} />
-        <Route exact path="/recorder" component={Recorder} />
+        <Route
+          exact
+          path="/recorder"
+          component={() => <Recorder recordingManager={recordingManager} />}
+        />
       </Switch>
     </Router>
   );
