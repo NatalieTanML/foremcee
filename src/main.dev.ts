@@ -15,16 +15,13 @@ import {
   app,
   BrowserWindow,
   globalShortcut,
-  shell,
   Notification,
   ipcMain,
 } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import { menubar } from 'menubar';
-import { Readable } from 'stream';
 import Preferences from './preferences';
-import { RecordingManager } from './recording-manager';
 import SpeechToText from './speech-to-text';
 // import MenuBuilder from './menu';
 
@@ -41,7 +38,6 @@ app.allowRendererProcessReuse = false;
 const APPLICATION_DIR = app.getPath('userData');
 let mainWindow: BrowserWindow | null = null;
 const preferences = new Preferences();
-const recordingManager = new RecordingManager(APPLICATION_DIR);
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
@@ -68,7 +64,7 @@ const installExtensions = async () => {
     .catch(console.log);
 };
 
-const createRecordingWindow = async () => {
+const createRecordingWindow = async (applicationDir: string) => {
   if (
     process.env.NODE_ENV === 'development' ||
     process.env.DEBUG_PROD === 'true'
@@ -97,17 +93,12 @@ const createRecordingWindow = async () => {
 
   mainWindow.loadURL(`file://${__dirname}/index.html#/recorder`);
 
-  mainWindow.on('closed', () => {
-    mainWindow = null;
+  mainWindow.webContents.on('did-finish-load', () => {
+    mainWindow?.webContents.send('init-menubar', applicationDir);
   });
 
-  // const menuBuilder = new MenuBuilder(mainWindow);
-  // menuBuilder.buildMenu();
-
-  // Open urls in the user's browser
-  mainWindow.webContents.on('new-window', (event, url) => {
-    event.preventDefault();
-    shell.openExternal(url);
+  mainWindow.on('closed', () => {
+    mainWindow = null;
   });
 
   // Remove this if your app does not use auto updates
@@ -146,7 +137,7 @@ function showNotification(title: string, body: string) {
 
 function startRecording() {
   if (mainWindow === null) {
-    createRecordingWindow();
+    createRecordingWindow(APPLICATION_DIR);
     showNotification('Recording Started', 'Transcibing your voice...');
   } else {
     mainWindow.webContents.send('recording:stop', true);
@@ -165,13 +156,6 @@ app.on('window-all-closed', () => {
   }
 });
 
-const bufferToStream = (buffer: Buffer): Readable => {
-  const stream = new Readable();
-  stream.push(buffer);
-  stream.push(null);
-  return stream;
-};
-
 app.on('ready', async () => {
   const hotKey = await preferences.getHotKey();
 
@@ -185,10 +169,7 @@ app.on('ready', async () => {
     throw err;
   }
 
-  ipcMain.on('recording:saved', async (_event, data) => {
-    const readStream = bufferToStream(Buffer.from(data));
-    await recordingManager.createRecording(readStream);
-
+  ipcMain.on('recording:saved', async () => {
     if (mainWindow !== null) {
       mainWindow.close();
       showNotification(

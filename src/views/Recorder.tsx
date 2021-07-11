@@ -1,8 +1,20 @@
 import React, { useEffect } from 'react';
 import { ipcRenderer, IpcRenderer } from 'electron';
+import { Readable } from 'stream';
+import { RecordingManager } from '../recording-manager';
 
-// eslint-disable-next-line @typescript-eslint/no-shadow
-const setupRecorder = (ipcRenderer: IpcRenderer) => {
+const bufferToStream = (buffer: Buffer): Readable => {
+  const stream = new Readable();
+  stream.push(buffer);
+  stream.push(null);
+  return stream;
+};
+
+const setupRecorder = (
+  // eslint-disable-next-line @typescript-eslint/no-shadow
+  ipcRenderer: IpcRenderer,
+  recordingManager: RecordingManager
+) => {
   const handleStream = (stream: MediaStream) => {
     const mimeType = 'audio/webm';
     const recordedChunks: Blob[] = [];
@@ -21,6 +33,8 @@ const setupRecorder = (ipcRenderer: IpcRenderer) => {
         type: mimeType,
       });
       const audioArr = new Uint8Array(await blob.arrayBuffer());
+      const readStream = bufferToStream(Buffer.from(audioArr));
+      await recordingManager.createRecording(readStream);
 
       ipcRenderer.send('recording:saved', audioArr);
     });
@@ -41,9 +55,15 @@ const setupRecorder = (ipcRenderer: IpcRenderer) => {
     .catch(console.error);
 };
 
-export default function Recorder() {
+type Props = {
+  recordingManager: RecordingManager | null;
+};
+
+export default function Recorder({ recordingManager }: Props) {
   useEffect(() => {
-    setupRecorder(ipcRenderer);
-  }, []);
+    if (recordingManager !== null) {
+      setupRecorder(ipcRenderer, recordingManager);
+    }
+  }, [recordingManager]);
   return <div />;
 }
