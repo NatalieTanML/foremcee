@@ -6,24 +6,32 @@ import {
   rmdir,
   mkdir,
   stat,
-  rename,
+  appendFile,
+  readFile,
+  writeFile,
 } from 'fs';
 import path from 'path';
 import { Readable } from 'stream';
 import { v4 as uuidv4 } from 'uuid';
 import Recording from './Recording';
+import Metadata from './Metadata';
 import SpeechToText from '../speech-to-text';
 
 const readdirAsync = promisify(readdir);
 const rmdirAsync = promisify(rmdir);
 const mkdirAsync = promisify(mkdir);
 const statAsync = promisify(stat);
-const renameAsync = promisify(rename);
-
+const writeFileAsync = promisify(writeFile);
+const appendFileAsync = promisify(appendFile);
+const readFileAsync = promisify(readFile);
 export default class RecordingManager {
   #rootDir: string;
 
   #speechToText: SpeechToText;
+
+  #metadataFileName = '.metadata';
+
+  #defaultRecordingName = 'Untitled Recording';
 
   constructor(applicationDir: string) {
     this.#rootDir = path.join(applicationDir, 'recordings');
@@ -42,17 +50,23 @@ export default class RecordingManager {
     const recordings = await Promise.all(
       items
         .filter((item) => item.isDirectory())
-        .map(
-          async (folder) =>
-            new Recording(
-              folder.name,
-              (
-                await statAsync(path.join(this.#rootDir, folder.name))
-              ).birthtime,
-              path.join(this.#rootDir, folder.name),
-              this.#speechToText
-            )
-        )
+        .map(async (folder) => {
+          const recordingDir = path.join(this.#rootDir, folder.name);
+          const { birthtime } = await statAsync(recordingDir);
+          const metadataFile = await readFileAsync(
+            path.join(recordingDir, this.#metadataFileName),
+            'utf8'
+          );
+          const metadata = JSON.parse(metadataFile) as Metadata;
+
+          return new Recording(
+            folder.name,
+            metadata.title,
+            birthtime,
+            recordingDir,
+            this.#speechToText
+          );
+        })
     );
     return recordings.sort(
       (x, y) => y.datetime.getTime() - x.datetime.getTime()
@@ -63,6 +77,10 @@ export default class RecordingManager {
     const recordingDir = path.join(this.#rootDir, uuidv4());
 
     await mkdirAsync(recordingDir);
+    await appendFileAsync(
+      path.join(recordingDir, this.#metadataFileName),
+      JSON.stringify(new Metadata(this.#defaultRecordingName))
+    );
 
     return new Promise((resolve, reject) => {
       const writeStream = createWriteStream(
@@ -79,7 +97,7 @@ export default class RecordingManager {
   }
 
   async deleteRecording(recording: Recording): Promise<void> {
-    await rmdirAsync(path.join(this.#rootDir, recording.title), {
+    await rmdirAsync(path.join(this.#rootDir, recording.id), {
       recursive: true,
     });
   }
@@ -88,12 +106,19 @@ export default class RecordingManager {
     newTitle: string,
     recording: Recording
   ): Promise<Recording> {
-    const newDir = path.join(this.#rootDir, newTitle);
-    await renameAsync(path.join(this.#rootDir, recording.title), newDir);
+    const recordingDir = path.join(this.#rootDir, recording.id);
+    // Uncomment to reuse existing metadata information when more than one field becomes available.
+    // const metadataFile = await readFileAsync(path.join(recordingDir, this.#metadataFileName), 'utf8');
+    // const metadata = JSON.parse(metadataFile) as Metadata;
+    await writeFileAsync(
+      path.join(recordingDir, this.#metadataFileName),
+      JSON.stringify(new Metadata(newTitle))
+    );
     return new Recording(
+      recording.id,
       newTitle,
       recording.datetime,
-      newDir,
+      recordingDir,
       this.#speechToText
     );
   }
