@@ -45,6 +45,7 @@ export default class Recording {
   #speechToText: SpeechToText;
 
   constructor(
+    public readonly id: string,
     public readonly title: string,
     public readonly datetime: Date,
     directory: string,

@@ -1,24 +1,37 @@
 import { promisify } from 'util';
-import { createWriteStream, mkdirSync, readdir, rmdir, mkdir } from 'fs';
+import {
+  createWriteStream,
+  mkdirSync,
+  readdir,
+  rmdir,
+  mkdir,
+  stat,
+  appendFile,
+  readFile,
+  writeFile,
+} from 'fs';
 import path from 'path';
 import { Readable } from 'stream';
+import { v4 as uuidv4 } from 'uuid';
 import Recording from './Recording';
+import Metadata from './Metadata';
 import SpeechToText from '../speech-to-text';
 
 const readdirAsync = promisify(readdir);
 const rmdirAsync = promisify(rmdir);
 const mkdirAsync = promisify(mkdir);
-
-const formatDateForStorage = (datetime: Date) =>
-  datetime.toISOString().replaceAll(':', '_').replaceAll('.', 'dot');
-
-const formatStorageNameForDate = (name: string) =>
-  name.replaceAll('_', ':').replaceAll('dot', '.');
-
+const statAsync = promisify(stat);
+const writeFileAsync = promisify(writeFile);
+const appendFileAsync = promisify(appendFile);
+const readFileAsync = promisify(readFile);
 export default class RecordingManager {
   #rootDir: string;
 
   #speechToText: SpeechToText;
+
+  #metadataFileName = '.metadata';
+
+  #defaultRecordingName = 'Untitled Recording';
 
   constructor(applicationDir: string) {
     this.#rootDir = path.join(applicationDir, 'recordings');
@@ -34,25 +47,40 @@ export default class RecordingManager {
 
   async getRecordings(): Promise<Array<Recording>> {
     const items = await readdirAsync(this.#rootDir, { withFileTypes: true });
-    return items
-      .filter((item) => item.isDirectory())
-      .map(
-        (folder) =>
-          new Recording(
-            formatStorageNameForDate(folder.name),
-            new Date(formatStorageNameForDate(folder.name)),
-            path.join(this.#rootDir, folder.name),
+    const recordings = await Promise.all(
+      items
+        .filter((item) => item.isDirectory())
+        .map(async (folder) => {
+          const recordingDir = path.join(this.#rootDir, folder.name);
+          const { birthtime } = await statAsync(recordingDir);
+          const metadataFile = await readFileAsync(
+            path.join(recordingDir, this.#metadataFileName),
+            'utf8'
+          );
+          const metadata = JSON.parse(metadataFile) as Metadata;
+
+          return new Recording(
+            folder.name,
+            metadata.title,
+            birthtime,
+            recordingDir,
             this.#speechToText
-          )
-      )
-      .sort((x, y) => y.datetime.getTime() - x.datetime.getTime());
+          );
+        })
+    );
+    return recordings.sort(
+      (x, y) => y.datetime.getTime() - x.datetime.getTime()
+    );
   }
 
   async createRecording(readStream: Readable): Promise<void> {
-    const newFolderName = formatDateForStorage(new Date());
-    const recordingDir = path.join(this.#rootDir, newFolderName);
+    const recordingDir = path.join(this.#rootDir, uuidv4());
 
     await mkdirAsync(recordingDir);
+    await appendFileAsync(
+      path.join(recordingDir, this.#metadataFileName),
+      JSON.stringify(new Metadata(this.#defaultRecordingName))
+    );
 
     return new Promise((resolve, reject) => {
       const writeStream = createWriteStream(
@@ -69,9 +97,29 @@ export default class RecordingManager {
   }
 
   async deleteRecording(recording: Recording): Promise<void> {
-    await rmdirAsync(
-      path.join(this.#rootDir, formatDateForStorage(recording.datetime)),
-      { recursive: true }
+    await rmdirAsync(path.join(this.#rootDir, recording.id), {
+      recursive: true,
+    });
+  }
+
+  async renameRecording(
+    newTitle: string,
+    recording: Recording
+  ): Promise<Recording> {
+    const recordingDir = path.join(this.#rootDir, recording.id);
+    // Uncomment to reuse existing metadata information when more than one field becomes available.
+    // const metadataFile = await readFileAsync(path.join(recordingDir, this.#metadataFileName), 'utf8');
+    // const metadata = JSON.parse(metadataFile) as Metadata;
+    await writeFileAsync(
+      path.join(recordingDir, this.#metadataFileName),
+      JSON.stringify(new Metadata(newTitle))
+    );
+    return new Recording(
+      recording.id,
+      newTitle,
+      recording.datetime,
+      recordingDir,
+      this.#speechToText
     );
   }
 }

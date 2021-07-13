@@ -38,13 +38,15 @@ const MenuBar = ({
   };
 
   const filterByCurrentInput = (recs: Recording[]) => {
-    let filtered = recs.filter((recording) =>
-      recording.datetime
-        .toLocaleDateString('en-US', { dateStyle: 'full' })
-        .toLowerCase()
-        .includes(input.toLowerCase().trim())
+    const inputString = input.toLowerCase().trim();
+    let filtered = recs.filter(
+      (recording) =>
+        recording.datetime
+          .toLocaleDateString('en-US', { dateStyle: 'full' })
+          .toLowerCase()
+          .includes(inputString) ||
+        recording.title.toLowerCase().includes(inputString)
     );
-    // TODO: Include filter/search for recording name once implemented
     filtered = sortAscending ? filtered.reverse() : filtered;
     return groupRecordingsByDate(filtered);
   };

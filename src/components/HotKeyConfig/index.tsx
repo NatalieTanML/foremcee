@@ -37,6 +37,7 @@ const HotKeyConfig = () => {
   };
 
   const updateHotKey = () => {
+    if (inputValue === '') return;
     ipcRenderer.send('hotKey:update', inputValue);
     ipcRenderer.on('hotKey:success', () => {
       setHotKey(inputValue);

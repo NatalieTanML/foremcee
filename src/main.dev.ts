@@ -113,8 +113,9 @@ const createMenubar = async (applicationDir: string) => {
     browserWindow: {
       transparent: false,
       alwaysOnTop: false,
-      width: 450,
+      width: 550,
       height: 600,
+      // resizable: false, // Uncomment when building for prod
       webPreferences: {
         nodeIntegration: true,
         enableRemoteModule: true,
