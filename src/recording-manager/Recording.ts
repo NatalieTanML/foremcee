@@ -1,39 +1,11 @@
 import path from 'path';
 import { writeFile } from 'fs';
 import { promisify } from 'util';
-import { spawn } from 'child_process';
-import ffmpegPath from 'ffmpeg-static';
 import { exists } from '../utils';
 import SpeechToText from '../speech-to-text';
+import { fileToWav as webmToWav } from './converter';
 
 const writeFileAsync = promisify(writeFile);
-
-const webmToWav = async (
-  webmFileDir: string,
-  destDir: string,
-  wavFileName: string
-): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    const ffmpeg = spawn(ffmpegPath, [
-      // eslint-disable-next-line prettier/prettier
-      '-i', webmFileDir,
-      // eslint-disable-next-line prettier/prettier
-      '-ar', '16000',
-      // eslint-disable-next-line prettier/prettier
-      '-y', path.join(destDir, `${wavFileName}.wav`),
-    ]);
-    let output = '';
-    ffmpeg.stderr.on('data', (chunk) => {
-      output += chunk;
-    });
-    ffmpeg.on('exit', (code) => {
-      if (code) {
-        return reject(new Error(output));
-      }
-      return resolve();
-    });
-  });
-};
 
 export default class Recording {
   static defaultAudioName = 'audio';

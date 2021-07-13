@@ -6,6 +6,7 @@ export type Props = {
   onClick: () => void;
   isLoading?: boolean;
   children?: React.ReactNode;
+  title?: string;
   addStyleName?: string;
   addStyleNameLoading?: string;
 };
@@ -14,6 +15,7 @@ const IconButton = ({
   onClick,
   isLoading = false,
   children,
+  title,
   addStyleName = '',
   addStyleNameLoading = '',
 }: Props) => {
@@ -30,6 +32,7 @@ const IconButton = ({
     <button
       type="button"
       disabled={isLoading}
+      title={title}
       onClick={onClick}
       className={styleName}
     >
