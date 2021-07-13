@@ -8,6 +8,7 @@ import {
   HiSortDescending,
   HiUpload,
 } from 'react-icons/hi';
+import { createReadStream } from 'fs';
 import { Recording, RecordingManager } from '../recording-manager';
 
 import Header from '../components/Header';
@@ -23,7 +24,6 @@ const MenuBar = ({
 }) => {
   const [recordings, setRecordings] = useState<Record<string, Recording[]>>({});
   const [sortAscending, setSortAscending] = useState<boolean>(false);
-  const [selectedFile, setSelectedFile] = useState<File | undefined>();
   const [input, setInput] = useState<string>('');
 
   const history = useHistory();
@@ -56,10 +56,14 @@ const MenuBar = ({
     return groupRecordingsByDate(filtered);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files) return;
-    console.log(e.target.files);
-    if (e.target.files.length > 0) setSelectedFile(e.target.files[0]);
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { files } = e.target;
+    if (!files) return;
+    if (files.length > 0 && recordingManager) {
+      const media = createReadStream(files[0].path);
+      await recordingManager.importMediaAsRecording(media).catch(console.error);
+    }
+    e.target.value = '';
   };
 
   const uploadFile = () => {
@@ -120,9 +124,9 @@ const MenuBar = ({
           <input
             type="file"
             name="file"
+            className="hidden"
             accept="audio/*,video/*"
             ref={fileRef}
-            style={{ display: 'none' }}
             onChange={handleFileChange}
           />
           <IconButton
