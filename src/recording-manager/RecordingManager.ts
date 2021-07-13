@@ -16,6 +16,7 @@ import { v4 as uuidv4 } from 'uuid';
 import Recording from './Recording';
 import Metadata from './Metadata';
 import SpeechToText from '../speech-to-text';
+import { fileToWav } from './converter';
 
 const readdirAsync = promisify(readdir);
 const rmdirAsync = promisify(rmdir);
@@ -24,6 +25,23 @@ const statAsync = promisify(stat);
 const writeFileAsync = promisify(writeFile);
 const appendFileAsync = promisify(appendFile);
 const readFileAsync = promisify(readFile);
+
+const writeStreamToDir = async (
+  dir: string,
+  readStream: Readable
+): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    const writeStream = createWriteStream(dir);
+    readStream.pipe(writeStream);
+    readStream.on('end', () => {
+      return resolve();
+    });
+    readStream.on('error', (err) => {
+      return reject(err);
+    });
+  });
+};
+
 export default class RecordingManager {
   #rootDir: string;
 
@@ -32,6 +50,8 @@ export default class RecordingManager {
   #metadataFileName = '.metadata';
 
   #defaultRecordingName = 'Untitled Recording';
+
+  #defaultImportName = 'Untitled Import';
 
   constructor(applicationDir: string) {
     this.#rootDir = path.join(applicationDir, 'recordings');
@@ -82,18 +102,36 @@ export default class RecordingManager {
       JSON.stringify(new Metadata(this.#defaultRecordingName))
     );
 
-    return new Promise((resolve, reject) => {
-      const writeStream = createWriteStream(
-        path.join(recordingDir, `${Recording.defaultAudioName}.webm`)
+    return writeStreamToDir(
+      path.join(recordingDir, `${Recording.defaultAudioName}.webm`),
+      readStream
+    );
+  }
+
+  async importMediaAsRecording(readStream: Readable): Promise<void> {
+    const recordingDir = path.join(this.#rootDir, uuidv4());
+
+    try {
+      await mkdirAsync(recordingDir);
+      await appendFileAsync(
+        path.join(recordingDir, this.#metadataFileName),
+        JSON.stringify(new Metadata(this.#defaultImportName))
       );
-      readStream.pipe(writeStream);
-      readStream.on('end', () => {
-        return resolve();
+      await writeStreamToDir(
+        path.join(recordingDir, this.#defaultImportName),
+        readStream
+      );
+      await fileToWav(
+        path.join(recordingDir, this.#defaultImportName),
+        recordingDir,
+        Recording.defaultAudioName
+      );
+    } catch (err) {
+      await rmdirAsync(recordingDir, {
+        recursive: true,
       });
-      readStream.on('error', (err) => {
-        return reject(err);
-      });
-    });
+      throw err;
+    }
   }
 
   async deleteRecording(recording: Recording): Promise<void> {
