@@ -22,8 +22,14 @@ const ListItem = ({ recording, recordingManager }: Props) => {
 
   const updateTitle = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTitle = e.target.value;
-    if (newTitle === recording.title) return;
-    recordingManager.renameRecording(newTitle, recording).catch(console.error);
+    if (newTitle === '' || newTitle === recording.title) {
+      setRecordingTitle(recording.title);
+      return;
+    }
+    recordingManager.renameRecording(newTitle, recording).catch((error) => {
+      console.error(error);
+      setRecordingTitle(recording.title);
+    });
   };
 
   useEffect(() => {
