@@ -6,6 +6,7 @@ import {
   HiOutlineCog,
   HiSortAscending,
   HiSortDescending,
+  HiUpload,
 } from 'react-icons/hi';
 import { Recording, RecordingManager } from '../recording-manager';
 
@@ -22,9 +23,13 @@ const MenuBar = ({
 }) => {
   const [recordings, setRecordings] = useState<Record<string, Recording[]>>({});
   const [sortAscending, setSortAscending] = useState<boolean>(false);
+  const [selectedFile, setSelectedFile] = useState<File | undefined>();
   const [input, setInput] = useState<string>('');
 
   const history = useHistory();
+  const fileRef = React.useRef<HTMLInputElement>(null);
+  const styleName =
+    'text-indigo-500 bg-indigo-50 hover:text-white active:text-white hover:bg-indigo-500 active:bg-indigo-600 focus:outline-none';
 
   const groupRecordingsByDate = (recs: Recording[]) => {
     return recs.reduce((groups, rec) => {
@@ -49,6 +54,17 @@ const MenuBar = ({
     );
     filtered = sortAscending ? filtered.reverse() : filtered;
     return groupRecordingsByDate(filtered);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    console.log(e.target.files);
+    if (e.target.files.length > 0) setSelectedFile(e.target.files[0]);
+  };
+
+  const uploadFile = () => {
+    if (!fileRef.current) return;
+    fileRef.current.click();
   };
 
   useEffect(() => {
@@ -88,18 +104,35 @@ const MenuBar = ({
         handleClick={() => history.push('/settings')}
       />
       <div className="flex flex-row mt-4 gap-x-3 items-center">
+        <IconButton
+          onClick={() => setSortAscending(!sortAscending)}
+          addStyleName={styleName}
+        >
+          {sortAscending ? <HiSortAscending /> : <HiSortDescending />}
+        </IconButton>
         <Search
           keyword={input}
           setKeyword={setInput}
           title="Search for a recording"
           placeholder="Search"
         />
-        <IconButton
-          onClick={() => setSortAscending(!sortAscending)}
-          addStyleName="text-indigo-500 bg-indigo-50 hover:text-white active:text-white hover:bg-indigo-500 active:bg-indigo-600 focus:outline-none"
-        >
-          {sortAscending ? <HiSortAscending /> : <HiSortDescending />}
-        </IconButton>
+        <div>
+          <input
+            type="file"
+            name="file"
+            accept="audio/*,video/*"
+            ref={fileRef}
+            style={{ display: 'none' }}
+            onChange={handleFileChange}
+          />
+          <IconButton
+            onClick={uploadFile}
+            addStyleName={styleName}
+            title="Upload video/audio file for transcribing"
+          >
+            <HiUpload />
+          </IconButton>
+        </div>
       </div>
       {Object.entries(recordings).map(([k, v]) => (
         <React.Fragment key={k}>
