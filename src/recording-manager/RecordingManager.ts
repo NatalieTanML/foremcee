@@ -9,6 +9,7 @@ import {
   appendFile,
   readFile,
   writeFile,
+  unlink,
 } from 'fs';
 import path from 'path';
 import { Readable } from 'stream';
@@ -25,6 +26,7 @@ const statAsync = promisify(stat);
 const writeFileAsync = promisify(writeFile);
 const appendFileAsync = promisify(appendFile);
 const readFileAsync = promisify(readFile);
+const unlinkAsync = promisify(unlink);
 
 const writeStreamToDir = async (
   dir: string,
@@ -110,22 +112,22 @@ export default class RecordingManager {
 
   async importMediaAsRecording(readStream: Readable): Promise<void> {
     const recordingDir = path.join(this.#rootDir, uuidv4());
+    const metadataDir = path.join(recordingDir, this.#metadataFileName);
+    const importedMediaDir = path.join(recordingDir, this.#defaultImportName);
 
     try {
       await mkdirAsync(recordingDir);
       await appendFileAsync(
-        path.join(recordingDir, this.#metadataFileName),
+        metadataDir,
         JSON.stringify(new Metadata(this.#defaultImportName))
       );
-      await writeStreamToDir(
-        path.join(recordingDir, this.#defaultImportName),
-        readStream
-      );
+      await writeStreamToDir(importedMediaDir, readStream);
       await fileToWav(
-        path.join(recordingDir, this.#defaultImportName),
+        importedMediaDir,
         recordingDir,
         Recording.defaultAudioName
       );
+      await unlinkAsync(importedMediaDir);
     } catch (err) {
       await rmdirAsync(recordingDir, {
         recursive: true,
