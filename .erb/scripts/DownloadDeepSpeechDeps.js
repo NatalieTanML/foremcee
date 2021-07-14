@@ -3,23 +3,21 @@ import https from 'https';
 import { unlinkSync, accessSync, mkdirSync, rmdirSync, createWriteStream } from 'fs';
 import { deepSpeech } from '../../package.json';
 
-const download = (url, dest, cb) => {
+const download = (url, dest) => new Promise((resolve, reject) => {
   const file = createWriteStream(dest);
   https.get(url, resp => {
     if ([301, 302].indexOf(resp.statusCode) > -1) {
-      return download(resp.headers.location, dest, cb)
+      return download(resp.headers.location, dest);
     }
     resp.pipe(file);
     file.on('finish', () => {
-      file.close(() => {
-        cb(null);
-      });
+      file.close(resolve);
     });
   }).on('error', err => {
     unlinkSync(dest);
-    if (cb) cb(err);
+    return reject(err);
   });
-};
+});
 
 const exists = dir => {
   try {
@@ -30,40 +28,64 @@ const exists = dir => {
   }
 };
 
-const deepSpeechDepPath = path.join(__dirname, '..', '..', 'deep-speech');
-if (!exists(deepSpeechDepPath)) {
-  mkdirSync(deepSpeechDepPath);
-}
+const CONSOLE_GREEN_FONT = '\x1b[32m';
+const CONSOLE_RED_FONT = '\x1b[31m';
 
+const deepSpeechDepPath = path.join(__dirname, '..', '..', 'deep-speech');
 const modelDir = path.join(deepSpeechDepPath, 'model.pbmm');
 const scorerDir = path.join(deepSpeechDepPath, 'scorer.scorer');
 
+let directoryModified = false;
+
+const handleDownloadFailure = err => {
+  if (err) console.log(CONSOLE_RED_FONT, err);
+  console.log(CONSOLE_RED_FONT, 'Unable to download DeepSpeech dependencies, please re-install your modules again.');
+
+  if (directoryModified) {
+    rmdirSync(deepSpeechDepPath, {
+      recursive: true
+    });
+  }
+};
+
+process.on('SIGTERM', signal => {
+  handleDownloadFailure();
+  process.exit(1);
+});
+
+process.on('SIGINT', signal => {
+  handleDownloadFailure();
+  process.exit(1);
+});
+
+process.on('uncaughtException', err => {
+  handleDownloadFailure(err);
+  process.exit(1);
+});
+
+if (!exists(deepSpeechDepPath)) {
+  directoryModified = true;
+  mkdirSync(deepSpeechDepPath);
+}
+
+const ongoingDownloads = [];
+
 if (!exists(modelDir)) {
-  console.log('Downloading model...');
-  download(deepSpeech.model, modelDir, err => {
-    if (err !== null) {
-      console.log(`Error: ${err}, undoing changes...`);
-      rmdirSync(deepSpeechDepPath, {
-        recursive: true
-      });
-      return;
-    }
+  directoryModified = true;
+  console.log(CONSOLE_GREEN_FONT, 'Downloading model...');
+  ongoingDownloads.push(download(deepSpeech.model, modelDir));
+}
 
-    if (!exists(scorerDir)) {
-      console.log('Downloading scorer...');
-      download(deepSpeech.scorer, scorerDir, err => {
-        if (err !== null) {
-          console.log(`Error: ${err}, undoing changes...`);
-          rmdirSync(deepSpeechDepPath, {
-            recursive: true
-          });
-          return;
-        }
+if (!exists(scorerDir)) {
+  directoryModified = true;
+  console.log(CONSOLE_GREEN_FONT, 'Downloading scorer...');
+  ongoingDownloads.push(download(deepSpeech.scorer, scorerDir));
+}
 
-        console.log('DeepSpeech dependencies downloaded.');
-      });
-    } else {
-      console.log('DeepSpeech dependencies downloaded.');
-    }
-  });
+if (ongoingDownloads.length > 0) {
+  Promise.all(ongoingDownloads)
+    .then(res => console.log(CONSOLE_GREEN_FONT, 'DeepSpeech dependencies downloaded.'))
+    .catch(handleDownloadFailure);
+} else {
+  console.log(CONSOLE_GREEN_FONT, 'DeepSpeech dependencies are already present.');
 }
