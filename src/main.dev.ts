@@ -117,6 +117,7 @@ const createMenubar = async (applicationDir: string, sttDir: string) => {
     index: `file://${__dirname}/index.html`,
     tooltip: 'Voice Notes',
     icon: getAssetPath(path.join('icons', '16x16.png')),
+    showDockIcon: false,
     browserWindow: {
       transparent: false,
       alwaysOnTop: false,
@@ -132,6 +133,7 @@ const createMenubar = async (applicationDir: string, sttDir: string) => {
   });
 
   mb.on('after-create-window', () => {
+    app.dock.hide();
     mb.window?.webContents.send('init-menubar', {
       applicationDir,
       sttDir,
