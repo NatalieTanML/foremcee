@@ -31,7 +31,7 @@ const exists = dir => {
 const CONSOLE_GREEN_FONT = '\x1b[32m';
 const CONSOLE_RED_FONT = '\x1b[31m';
 
-const deepSpeechDepPath = path.join(__dirname, '..', '..', 'deep-speech');
+const deepSpeechDepPath = path.join(__dirname, '..', '..', 'src', 'deepspeech');
 const modelDir = path.join(deepSpeechDepPath, 'model.pbmm');
 const scorerDir = path.join(deepSpeechDepPath, 'scorer.scorer');
 

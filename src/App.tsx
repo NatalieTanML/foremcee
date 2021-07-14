@@ -7,6 +7,11 @@ import MenuBar from './views/MenuBar';
 import Recorder from './views/Recorder';
 import Settings from './views/Settings';
 
+type InitPayload = {
+  applicationDir: string;
+  sttDir: string;
+};
+
 export default function App() {
   const [
     recordingManager,
@@ -14,9 +19,12 @@ export default function App() {
   ] = useState<RecordingManager | null>(null);
 
   useEffect(() => {
-    ipcRenderer.on('init-menubar', async (_event, applicationDir: string) => {
-      setRecordingManager(new RecordingManager(applicationDir));
-    });
+    ipcRenderer.on(
+      'init-menubar',
+      async (_event, { applicationDir, sttDir }: InitPayload) => {
+        setRecordingManager(new RecordingManager(applicationDir, sttDir));
+      }
+    );
   }, []);
 
   return (

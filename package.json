@@ -35,11 +35,13 @@
     ]
   },
   "build": {
-    "productName": "ElectronReact",
-    "appId": "org.erb.ElectronReact",
+    "productName": "Voice Notes",
+    "asar": false,
+    "appId": "org.foremcee.voicenotes",
     "files": [
       "dist/",
       "node_modules/",
+      "deepspeech/",
       "index.html",
       "main.prod.js",
       "main.prod.js.map",

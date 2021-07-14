@@ -22,7 +22,6 @@ import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import { menubar } from 'menubar';
 import Preferences from './preferences';
-// import SpeechToText from './speech-to-text';
 
 export default class AppUpdater {
   constructor() {
@@ -35,6 +34,7 @@ export default class AppUpdater {
 app.allowRendererProcessReuse = false;
 
 const APPLICATION_DIR = app.getPath('userData');
+const STT_DIRECTORY = __dirname;
 let mainWindow: BrowserWindow | null = null;
 const preferences = new Preferences();
 
@@ -50,6 +50,14 @@ if (
   require('electron-debug')();
 }
 
+const RESOURCES_PATH = app.isPackaged
+  ? path.join(process.resourcesPath, 'assets')
+  : path.join(__dirname, '../assets');
+
+const getAssetPath = (...paths: string[]): string => {
+  return path.join(RESOURCES_PATH, ...paths);
+};
+
 const installExtensions = async () => {
   const installer = require('electron-devtools-installer');
   const forceDownload = !!process.env.UPGRADE_EXTENSIONS;
@@ -63,7 +71,10 @@ const installExtensions = async () => {
     .catch(console.log);
 };
 
-const createRecordingWindow = async (applicationDir: string) => {
+const createRecordingWindow = async (
+  applicationDir: string,
+  sttDir: string
+) => {
   if (
     process.env.NODE_ENV === 'development' ||
     process.env.DEBUG_PROD === 'true'
@@ -71,29 +82,25 @@ const createRecordingWindow = async (applicationDir: string) => {
     await installExtensions();
   }
 
-  const RESOURCES_PATH = app.isPackaged
-    ? path.join(process.resourcesPath, 'assets')
-    : path.join(__dirname, '../assets');
-
-  const getAssetPath = (...paths: string[]): string => {
-    return path.join(RESOURCES_PATH, ...paths);
-  };
-
   mainWindow = new BrowserWindow({
-    show: false,
     icon: getAssetPath('icon.png'),
+    show: false,
     transparent: true,
     frame: false,
     webPreferences: {
       nodeIntegration: true,
       backgroundThrottling: false,
+      devTools: !app.isPackaged,
     },
   });
 
   mainWindow.loadURL(`file://${__dirname}/index.html#/recorder`);
 
   mainWindow.webContents.on('did-finish-load', () => {
-    mainWindow?.webContents.send('init-menubar', applicationDir);
+    mainWindow?.webContents.send('init-menubar', {
+      applicationDir,
+      sttDir,
+    });
   });
 
   mainWindow.on('closed', () => {
@@ -105,26 +112,30 @@ const createRecordingWindow = async (applicationDir: string) => {
   new AppUpdater();
 };
 
-const createMenubar = async (applicationDir: string) => {
+const createMenubar = async (applicationDir: string, sttDir: string) => {
   const mb = menubar({
     index: `file://${__dirname}/index.html`,
     tooltip: 'Voice Notes',
+    icon: getAssetPath(path.join('icons', '16x16.png')),
     browserWindow: {
       transparent: false,
       alwaysOnTop: false,
       width: 550,
       height: 600,
-      // resizable: false, // Uncomment when building for prod
+      resizable: !app.isPackaged,
       webPreferences: {
         nodeIntegration: true,
         enableRemoteModule: true,
+        devTools: !app.isPackaged,
       },
     },
   });
 
   mb.on('after-create-window', () => {
-    mb.window?.webContents.openDevTools({ mode: 'right' });
-    mb.window?.webContents.send('init-menubar', applicationDir);
+    mb.window?.webContents.send('init-menubar', {
+      applicationDir,
+      sttDir,
+    });
   });
 
   // eslint-disable-next-line
@@ -137,7 +148,7 @@ function showNotification(title: string, body: string) {
 
 function startRecording() {
   if (mainWindow === null) {
-    createRecordingWindow(APPLICATION_DIR);
+    createRecordingWindow(APPLICATION_DIR, STT_DIRECTORY);
     showNotification('Recording Started', 'Transcibing your voice...');
   } else {
     mainWindow.webContents.send('recording:stop', true);
@@ -158,16 +169,6 @@ app.on('window-all-closed', () => {
 
 app.on('ready', async () => {
   const hotKey = await preferences.getHotKey();
-
-  // try {
-  //   // TODO: Present a one time setup UI for dependency installation.
-  //   console.log('Installing Speech-To-Text dependencies...');
-  //   await SpeechToText.installDependencies(APPLICATION_DIR);
-  //   console.log('Installation complete, starting program...');
-  // } catch (err) {
-  //   console.error(err);
-  //   throw err;
-  // }
 
   ipcMain.on('recording:saved', async () => {
     if (mainWindow !== null) {
@@ -194,7 +195,7 @@ app.on('ready', async () => {
 
   globalShortcut.register(hotKey, startRecording);
 
-  createMenubar(APPLICATION_DIR);
+  createMenubar(APPLICATION_DIR, STT_DIRECTORY);
 });
 
 app.on('activate', () => {
