@@ -11,8 +11,7 @@
   },
   "scripts": {
     "electron-rebuild": "node -r ../.erb/scripts/BabelRegister.js ../.erb/scripts/ElectronRebuild.js",
-    "get-deepspeech-deps": "node -r ../.erb/scripts/BabelRegister.js ../.erb/scripts/DownloadDeepSpeechDeps.js",
-    "postinstall": "yarn electron-rebuild && yarn get-deepspeech-deps"
+    "postinstall": "yarn electron-rebuild"
   },
   "license": "MIT",
   "dependencies": {
