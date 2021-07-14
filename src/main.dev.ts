@@ -22,8 +22,7 @@ import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import { menubar } from 'menubar';
 import Preferences from './preferences';
-import SpeechToText from './speech-to-text';
-// import MenuBuilder from './menu';
+// import SpeechToText from './speech-to-text';
 
 export default class AppUpdater {
   constructor() {
@@ -160,15 +159,15 @@ app.on('window-all-closed', () => {
 app.on('ready', async () => {
   const hotKey = await preferences.getHotKey();
 
-  try {
-    // TODO: Present a one time setup UI for dependency installation.
-    console.log('Installing Speech-To-Text dependencies...');
-    await SpeechToText.installDependencies(APPLICATION_DIR);
-    console.log('Installation complete, starting program...');
-  } catch (err) {
-    console.error(err);
-    throw err;
-  }
+  // try {
+  //   // TODO: Present a one time setup UI for dependency installation.
+  //   console.log('Installing Speech-To-Text dependencies...');
+  //   await SpeechToText.installDependencies(APPLICATION_DIR);
+  //   console.log('Installation complete, starting program...');
+  // } catch (err) {
+  //   console.error(err);
+  //   throw err;
+  // }
 
   ipcMain.on('recording:saved', async () => {
     if (mainWindow !== null) {

@@ -9,8 +9,7 @@ import { exists, download } from '../utils';
 const mkdirAsync = promisify(mkdir);
 
 export default class SpeechToText {
-  static #getRootDir = (applicationDir: string) =>
-    path.join(applicationDir, 'stt');
+  static #getRootDir = (applicationDir: string) => applicationDir;
 
   static #getModelDir = (applicationDir: string) =>
     path.join(SpeechToText.#getRootDir(applicationDir), 'model.pbmm');

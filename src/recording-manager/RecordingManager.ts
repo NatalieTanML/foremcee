@@ -57,7 +57,9 @@ export default class RecordingManager {
 
   constructor(applicationDir: string) {
     this.#rootDir = path.join(applicationDir, 'recordings');
-    this.#speechToText = new SpeechToText(applicationDir);
+    this.#speechToText = new SpeechToText(
+      path.join(__dirname, '..', 'deep-speech')
+    );
     try {
       mkdirSync(this.#rootDir);
     } catch (err) {
