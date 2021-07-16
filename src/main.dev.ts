@@ -123,6 +123,7 @@ const createMenubar = async (applicationDir: string, sttDir: string) => {
       alwaysOnTop: false,
       width: 550,
       height: 600,
+      skipTaskbar: true,
       resizable: !app.isPackaged,
       webPreferences: {
         nodeIntegration: true,
@@ -133,7 +134,9 @@ const createMenubar = async (applicationDir: string, sttDir: string) => {
   });
 
   mb.on('after-create-window', () => {
-    app.dock.hide();
+    if (process.platform === 'darwin') {
+      app.dock.hide();
+    }
     mb.window?.webContents.send('init-menubar', {
       applicationDir,
       sttDir,

@@ -9,6 +9,8 @@
     "rebuild": "electron-rebuild --parallel --types prod,dev,optional --module-dir src",
     "lint": "cross-env NODE_ENV=development eslint . --cache --ext .js,.jsx,.ts,.tsx",
     "package": "rm -rf src/dist && yarn build && electron-builder build --publish never",
+    "package-mac": "rm -rf src/dist && yarn build && electron-builder build --mac --publish never",
+    "package-win": "rm -rf src/dist && yarn build && electron-builder build --win --x64 --publish never",
     "get-deepspeech-deps": "node -r ./.erb/scripts/BabelRegister.js ./.erb/scripts/DownloadDeepSpeechDeps.js",
     "postinstall": "node -r @babel/register .erb/scripts/CheckNativeDep.js && electron-builder install-app-deps && yarn cross-env NODE_ENV=development webpack --config ./.erb/configs/webpack.config.renderer.dev.dll.babel.js && opencollective-postinstall && yarn-deduplicate yarn.lock && yarn get-deepspeech-deps",
     "start": "node -r @babel/register ./.erb/scripts/CheckPortInUse.js && yarn start:renderer",
@@ -74,8 +76,11 @@
     },
     "win": {
       "target": [
-        "nsis"
+        "portable"
       ]
+    },
+    "portable": {
+      "artifactName": "Voice Notes.exe"
     },
     "linux": {
       "target": [
