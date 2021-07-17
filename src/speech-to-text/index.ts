@@ -1,16 +1,11 @@
 import * as deepSpeech from 'deepspeech';
-import { PathLike, createReadStream, mkdir } from 'fs';
+import { PathLike, createReadStream } from 'fs';
 import wav from 'wav';
 import path from 'path';
-import { promisify } from 'util';
-import { STT_MODEL_URL, STT_SCORER_URL } from '../../config';
-import { exists, download } from '../utils';
-
-const mkdirAsync = promisify(mkdir);
 
 export default class SpeechToText {
   static #getRootDir = (applicationDir: string) =>
-    path.join(applicationDir, 'stt');
+    path.join(applicationDir, 'deepspeech');
 
   static #getModelDir = (applicationDir: string) =>
     path.join(SpeechToText.#getRootDir(applicationDir), 'model.pbmm');
@@ -21,28 +16,6 @@ export default class SpeechToText {
   #bufferSize = 512;
 
   #model: deepSpeech.Model;
-
-  static async installDependencies(applicationDir: string): Promise<void> {
-    const dependencyDir = SpeechToText.#getRootDir(applicationDir);
-    const dependencyDirExist = await exists(dependencyDir);
-    if (!dependencyDirExist) {
-      await mkdirAsync(dependencyDir);
-    }
-
-    const modelDir = SpeechToText.#getModelDir(applicationDir);
-    const scorerDir = SpeechToText.#getScorerDir(applicationDir);
-
-    const modelExist = await exists(modelDir);
-    const scorerExist = await exists(scorerDir);
-
-    if (!modelExist) {
-      await download(STT_MODEL_URL, modelDir);
-    }
-
-    if (!scorerExist) {
-      await download(STT_SCORER_URL, scorerDir);
-    }
-  }
 
   constructor(applicationDir: string) {
     this.#model = new deepSpeech.Model(

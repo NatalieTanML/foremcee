@@ -55,9 +55,9 @@ export default class RecordingManager {
 
   #defaultImportName = 'Untitled Import';
 
-  constructor(applicationDir: string) {
+  constructor(applicationDir: string, sttDir: string) {
     this.#rootDir = path.join(applicationDir, 'recordings');
-    this.#speechToText = new SpeechToText(applicationDir);
+    this.#speechToText = new SpeechToText(sttDir);
     try {
       mkdirSync(this.#rootDir);
     } catch (err) {
