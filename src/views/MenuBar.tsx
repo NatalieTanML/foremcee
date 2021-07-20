@@ -24,7 +24,7 @@ const MenuBar = ({
 }) => {
   const [recordings, setRecordings] = useState<Record<string, Recording[]>>({});
   const [sortAscending, setSortAscending] = useState<boolean>(false);
-  const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [, setIsUploading] = useState<boolean>(false);
   const [input, setInput] = useState<string>('');
 
   const history = useHistory();
