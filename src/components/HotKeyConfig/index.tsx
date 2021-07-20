@@ -11,6 +11,8 @@ const HotKeyConfig = () => {
   const [inputValue, setInputValue] = useState<string | undefined>('');
   const [isKeyUp, setIsKeyUp] = useState<boolean>(false);
 
+  const hotKeyRef = React.useRef<HTMLInputElement>(null);
+
   const inputStyleName = isEditing
     ? 'capitalize flex-auto px-4 py-2 rounded-md appearance-none border-2 border-indigo-50 bg-white text-gray-700 hover:border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent cursor-text'
     : 'capitalize flex-auto px-4 py-2 rounded-md appearance-none border-2 border-gray-50 bg-gray-50 text-gray-700 disabled:opacity-75 focus:outline-none cursor-default';
@@ -61,34 +63,39 @@ const HotKeyConfig = () => {
       .catch(console.error);
   }, []);
 
+  useEffect(() => {
+    if (isEditing && hotKeyRef.current) {
+      hotKeyRef.current.focus();
+    }
+  }, [isEditing]);
+
   return (
-    <>
-      <div className="flex flex-row relative my-2">
-        <div className="flex flex-1 gap-x-3 items-center">
-          <input
-            type="text"
-            name="hotKeyInput"
-            id="hotKeyInput"
-            title="Keyboard shortcut to start and stop a recording"
-            className={inputStyleName}
-            readOnly
-            disabled={!isEditing}
-            onKeyDown={handleInput}
-            onKeyUp={handleInput}
-            value={inputValue}
-          />
-          <IconButton
-            onClick={updateHotKey}
-            addStyleName={isEditing ? btnStyleName : 'hidden'}
-          >
-            <HiCheck />
-          </IconButton>
-          <IconButton onClick={toggleEdit} addStyleName={btnStyleName}>
-            {btnContent}
-          </IconButton>
-        </div>
+    <div className="flex flex-row relative my-2">
+      <div className="flex flex-1 gap-x-3 items-center">
+        <input
+          type="text"
+          name="hotKeyRef"
+          id="hotKeyRef"
+          ref={hotKeyRef}
+          title="Keyboard shortcut to start and stop a recording"
+          className={inputStyleName}
+          readOnly
+          disabled={!isEditing}
+          onKeyDown={handleInput}
+          onKeyUp={handleInput}
+          value={inputValue}
+        />
+        <IconButton
+          onClick={updateHotKey}
+          addStyleName={isEditing ? btnStyleName : 'hidden'}
+        >
+          <HiCheck />
+        </IconButton>
+        <IconButton onClick={toggleEdit} addStyleName={btnStyleName}>
+          {btnContent}
+        </IconButton>
       </div>
-    </>
+    </div>
   );
 };
 
