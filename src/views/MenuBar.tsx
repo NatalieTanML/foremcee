@@ -24,6 +24,7 @@ const MenuBar = ({
 }) => {
   const [recordings, setRecordings] = useState<Record<string, Recording[]>>({});
   const [sortAscending, setSortAscending] = useState<boolean>(false);
+  const [fileInput, setFileInput] = useState<File>();
   const [input, setInput] = useState<string>('');
 
   const history = useHistory();
@@ -59,11 +60,13 @@ const MenuBar = ({
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const { files } = e.target;
     if (!files) return;
+    setFileInput(files[0]);
     if (files.length > 0 && recordingManager) {
       const media = createReadStream(files[0].path);
       await recordingManager.importMediaAsRecording(media).catch(console.error);
     }
     e.target.value = '';
+    setFileInput(undefined);
   };
 
   const uploadFile = () => {
@@ -138,18 +141,27 @@ const MenuBar = ({
           </IconButton>
         </div>
       </div>
-      {Object.entries(recordings).map(([k, v]) => (
-        <React.Fragment key={k}>
-          <ListHeader title={k} />
-          {v.map((rec) => (
-            <ListItem
-              key={rec.datetime.getTime()}
-              recording={rec}
-              recordingManager={recordingManager}
-            />
-          ))}
-        </React.Fragment>
-      ))}
+      {Object.keys(recordings).length > 0 ? (
+        Object.entries(recordings).map(([k, v]) => (
+          <React.Fragment key={k}>
+            <ListHeader title={k} />
+            {v.map((rec) => (
+              <ListItem
+                key={rec.datetime.getTime()}
+                recording={rec}
+                recordingManager={recordingManager}
+              />
+            ))}
+          </React.Fragment>
+        ))
+      ) : (
+        <div className="flex flex-row p-20 justify-center content-center">
+          <p className="text-gray-400 text-center">
+            There are no recordings. Create a new one by activating the hotkey
+            or uploading your own media!
+          </p>
+        </div>
+      )}
     </div>
   );
 };

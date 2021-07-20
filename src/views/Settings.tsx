@@ -18,7 +18,6 @@ const Settings = () => {
       />
       <SettingsHeader title="HotKey Configuration" />
       <HotKeyConfig />
-      {/* <SettingsHeader title="Open on Startup" /> */}
     </div>
   );
 };
