@@ -24,7 +24,7 @@ const MenuBar = ({
 }) => {
   const [recordings, setRecordings] = useState<Record<string, Recording[]>>({});
   const [sortAscending, setSortAscending] = useState<boolean>(false);
-  const [fileInput, setFileInput] = useState<File>();
+  const [isUploading, setIsUploading] = useState<boolean>(false);
   const [input, setInput] = useState<string>('');
 
   const history = useHistory();
@@ -60,13 +60,13 @@ const MenuBar = ({
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const { files } = e.target;
     if (!files) return;
-    setFileInput(files[0]);
+    setIsUploading(true);
     if (files.length > 0 && recordingManager) {
       const media = createReadStream(files[0].path);
       await recordingManager.importMediaAsRecording(media).catch(console.error);
     }
     e.target.value = '';
-    setFileInput(undefined);
+    setIsUploading(false);
   };
 
   const uploadFile = () => {
