@@ -23,6 +23,10 @@ To uninstall the app, simply drag the application to the bin. Alternatively, you
 
 To uninstall the app, navigate to ```Control Panel > Programs > Uninstall a program``` and select the app to uninstall it.
 
+### Sample Files
+
+You may download the sample audio files for testing [here](https://github.com/mozilla/DeepSpeech/releases/download/v0.9.3/audio-0.9.3.tar.gz).
+
 ## Getting Started
 
 To access the app, you may locate it via the app icon on the menubar on MacOS, or via the taskbar on Windows. 
